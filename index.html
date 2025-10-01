@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Docente: Electrónica Básica</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        /* Contenedor principal */
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Columna lateral de navegación */
+        .sidebar {
+            width: 280px;
+            background-color: #333a45;
+            color: #fff;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        .sidebar h1 {
+            font-size: 1.5em;
+            text-align: center;
+            margin-bottom: 25px;
+            color: #4A90E2;
+        }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sidebar li a {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s;
+        }
+        .sidebar li a:hover, .sidebar li a.active {
+            background-color: #4A90E2;
+        }
+
+        /* Área de contenido principal */
+        .content-area {
+            flex-grow: 1;
+            margin-left: 280px; /* Mismo ancho que el sidebar */
+            padding: 40px;
+        }
+
+        /* Estilo para los paneles de temas */
+        .topic-panel {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 25px 35px;
+            display: none; /* Ocultos por defecto */
+        }
+        .topic-panel h2 {
+            font-size: 2em;
+            color: #4A90E2;
+            margin-top: 0;
+        }
+        .topic-panel.active {
+            display: block; /* Muestra el panel activo */
+        }
+        .topic-panel ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .topic-panel li {
+            margin-bottom: 1.2rem;
+            padding-left: 1.5em;
+            position: relative;
+        }
+        .topic-panel li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4A90E2;
+            font-weight: bold;
+        }
+        .topic-panel li strong {
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #333;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <nav class="sidebar">
+            <h1>Temario de Física ⚡</h1>
+            <ul id="topic-list">
+                <li><a href="#tema1" class="topic-link active">1. Conceptos Básicos</a></li>
+                <li><a href="#tema2" class="topic-link">2. Teoría de Circuitos</a></li>
+                <li><a href="#tema3" class="topic-link">3. Semiconductores</a></li>
+                <li><a href="#tema4" class="topic-link">4. Lógica Digital</a></li>
+                <li><a href="#tema5" class="topic-link">5. Microprocesadores (ESP32)</a></li>
+                <li><a href="#tema6" class="topic-link">6. Interfaces y Comunicaciones</a></li>
+            </ul>
+        </nav>
+
+        <main class="content-area">
+            <section id="tema1" class="topic-panel active">
+                <h2>Tema 1: Conceptos Básicos de Electrónica</h2>
+                <p>Este módulo introduce los componentes pasivos fundamentales y las magnitudes eléctricas que rigen su comportamiento.</p>
+                <ul>
+                    <li>
+                        <strong>1.1 Magnitudes Eléctricas Fundamentales:</strong>
+                        Se definen y exploran el voltaje (V), la corriente (A) y la resistencia (Ω). Se utilizarán analogías hidráulicas para facilitar la comprensión.
+                    </li>
+                    <li>
+                        <strong>1.2 Ley de Ohm y Potencia Eléctrica:</strong>
+                        Estudio de la relación V = I · R y el concepto de potencia eléctrica (P = V · I) y su importancia en el diseño de circuitos.
+                    </li>
+                    <li>
+                        <strong>1.3 Resistencias y Código de Colores:</strong>
+                        Análisis de la resistencia como componente físico y cómo identificar su valor y tolerancia utilizando el código de colores.
+                    </li>
+                    <li>
+                        <strong>1.4 Condensadores: Almacenamiento de Energía:</strong>
+                        Introducción al condensador, los conceptos de capacidad (Faradios) y los procesos de carga y descarga.
+                    </li>
+                    <li>
+                        <strong>1.5 Inductores: Campo Magnético y Corriente:</strong>
+                        Presentación del inductor, el concepto de inductancia (Henrios) y su aplicación en filtros y fuentes.
+                    </li>
+                </ul>
+            </section>
+
+            <section id="tema2" class="topic-panel">
+                <h2>Tema 2: Teoría de Circuitos Eléctricos</h2>
+                <p>En este tema se aplican los conceptos básicos al análisis de redes eléctricas para predecir su comportamiento.</p>
+                <ul>
+                    <li><strong>2.1 Circuitos en Serie y en Paralelo:</strong> Análisis de las dos configuraciones básicas de conexión de componentes.</li>
+                    <li><strong>2.2 Leyes de Kirchhoff (LKV y LKC):</strong> Introducción a las dos leyes fundamentales para el análisis de circuitos.</li>
+                    <li><strong>2.3 Teoremas de Thevenin y Norton:</strong> Herramientas para simplificar circuitos complejos a una fuente equivalente.</li>
+                    <li><strong>2.4 Análisis de Mallas y Nodos:</strong> Métodos sistemáticos para resolver circuitos con múltiples fuentes.</li>
+                    <li><strong>2.5 Circuitos RC, RL y RLC en Corriente Continua (CC):</strong> Estudio de la respuesta transitoria de circuitos.</li>
+                </ul>
+            </section>
+
+            <section id="tema3" class="topic-panel">
+                <h2>Tema 3: Semiconductores</h2>
+                <p>Este módulo es clave para entender la electrónica moderna, explorando los dispositivos que han revolucionado la tecnología.</p>
+                <ul>
+                    <li><strong>3.1 Materiales Semiconductores (Silicio y Germanio):</strong> Explora cómo el proceso de dopaje (tipo N y P) permite controlar su conductividad.</li>
+                    <li><strong>3.2 El Diodo de Unión PN:</strong> Estudio del componente semiconductor más simple y su comportamiento como "interruptor unidireccional".</li>
+                    <li><strong>3.3 El Transistor Bipolar de Unión (BJT):</strong> Introducción al BJT como amplificador de corriente o interruptor electrónico.</li>
+                    <li><strong>3.4 El Transistor de Efecto de Campo (MOSFET):</strong> Presentación del MOSFET, el componente fundamental en circuitos integrados digitales.</li>
+                    <li><strong>3.5 Aplicaciones Básicas: Rectificadores y Amplificadores:</strong> Construcción de fuentes de alimentación y etapas de amplificación.</li>
+                </ul>
+            </section>
+            
+            <section id="tema4" class="topic-panel">
+                 <h2>Tema 4: Lógica Booleana y Sistemas Digitales</h2>
+                <p>Este tema marca la transición del mundo analógico al digital y los circuitos que procesan información en formato binario.</p>
+                 <ul>
+                     <li><strong>4.1 Sistemas de Numeración (Binario y Hexadecimal):</strong> Introducción al sistema binario y conversiones.</li>
+                     <li><strong>4.2 Álgebra de Boole y Puertas Lógicas (AND, OR, NOT):</strong> Estudio del marco matemático y las puertas lógicas básicas.</li>
+                     <li><strong>4.3 Puertas Lógicas Universales (NAND, NOR) y XOR:</strong> Exploración de puertas lógicas avanzadas y sus usos.</li>
+                     <li><strong>4.4 Circuitos Combinacionales: Sumadores y Multiplexores:</strong> Diseño de circuitos como sumadores y multiplexores.</li>
+                     <li><strong>4.5 Circuitos Secuenciales: Flip-Flops y Registros:</strong> Introducción a circuitos con memoria, estudiando el Flip-Flop.</li>
+                 </ul>
+            </section>
+
+            <section id="tema5" class="topic-panel">
+                <h2>Tema 5: Microprocesadores (ESP32)</h2>
+                <p>En este módulo se pasa de la teoría a la práctica programando el ESP32 para que interactúe con el mundo real.</p>
+                <ul>
+                    <li><strong>5.1 Arquitectura de un Microprocesador:</strong> Visión general de la CPU, memoria (RAM, ROM) y periféricos de E/S.</li>
+                    <li><strong>5.2 Introducción al ESP32 y su Ecosistema:</strong> Presentación del ESP32, su placa y el entorno de programación.</li>
+                    <li><strong>5.3 Entradas y Salidas Digitales (GPIO):</strong> Prácticas para controlar LEDs y leer pulsadores.</li>
+                    <li><strong>5.4 Entradas Analógicas (ADC) y Salidas PWM:</strong> Uso del ADC para leer sensores y de la PWM para simular salidas analógicas.</li>
+                    <li><strong>5.5 Programación de Temporizadores e Interrupciones:</strong> Técnicas para gestionar tareas basadas en tiempo y eventos.</li>
+                </ul>
+            </section>
+
+            <section id="tema6" class="topic-panel">
+                <h2>Tema 6: Interfaces y Comunicaciones</h2>
+                <p>El último tema se centra en cómo los microprocesadores y circuitos se comunican entre sí y con otros dispositivos.</p>
+                <ul>
+                    <li><strong>6.1 Comunicación Serie Asíncrona (UART):</strong> Estudio del protocolo UART para la comunicación con un PC.</li>
+                    <li><strong>6.2 Protocolo de Comunicación I2C:</strong> Introducción al bus I2C, para conectar múltiples dispositivos con dos cables.</li>
+                    <li><strong>6.3 Protocolo de Comunicación SPI:</strong> Presentación del protocolo SPI, generalmente más rápido que I2C.</li>
+                    <li><strong>6.4 Conectividad Inalámbrica: WiFi y Bluetooth con ESP32:</strong> Proyectos básicos para conectar el ESP32 a una red WiFi y Bluetooth.</li>
+                    <li><strong>6.5 Sensores y Actuadores Comunes:</strong> Integración final para conectar y programar sensores y actuadores.</li>
+                </ul>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT PARA LA INTERACTIVIDAD ---
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('.topic-link');
+            const panels = document.querySelectorAll('.topic-panel');
+
+            // Función para cambiar el panel visible
+            function showPanel(targetId) {
+                // Ocultar todos los paneles
+                panels.forEach(panel => {
+                    panel.classList.remove('active');
+                });
+                
+                // Quitar la clase 'active' de todos los links
+                links.forEach(link => {
+                    link.classList.remove('active');
+                });
+
+                // Mostrar el panel objetivo
+                const targetPanel = document.querySelector(targetId);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
+                
+                // Añadir la clase 'active' al link clickeado
+                const activeLink = document.querySelector(`a[href="${targetId}"]`);
+                if(activeLink) {
+                    activeLink.classList.add('active');
+                }
+            }
+
+            // Añadir evento de click a cada link del menú
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevenir el comportamiento por defecto del link
+                    const targetId = this.getAttribute('href');
+                    showPanel(targetId);
+                });
+            });
+
+            // Opcional: Mostrar el primer panel por defecto al cargar
+            showPanel('#tema1');
+        });
+    </script>
+
+</body>
+</html>
