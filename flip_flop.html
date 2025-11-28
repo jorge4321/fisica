@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación Flip-Flop SR Interactivo</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --wire-off: #4a1c1c; /* Rojo oscuro apagado (Low voltage hold) */
+            --wire-on: #00ff00;  /* Verde brillante encendido (High voltage) */
+            --wire-low-active: #ff3333; /* Rojo brillante para 0 activo (cuando se pulsa Reset) */
+            --gate-color: #e0e0e0;
+            --text-color: #ffffff;
+            --output-off: #330000;
+            --output-on: #ff0000; /* LED rojo brillante */
+            --container-bg: #16213e;
+            --container-border: #0f3460;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Evitar barras de desplazamiento */
+        }
+
+        h1 { margin-bottom: 10px; font-weight: 300; }
+        p.subtitle { color: #aaa; margin-bottom: 30px; font-weight: 300; }
+
+        .container {
+            position: relative;
+            width: 700px; /* Un poco más ancho para que respire */
+            height: 450px; /* Un poco más alto */
+            background: var(--container-bg);
+            border: 3px solid var(--container-border);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            /* Centrar contenido interno */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Area de dibujo del circuito relativo al contenedor */
+        .circuit-area {
+            position: relative;
+            width: 600px;
+            height: 400px;
+        }
+
+        /* SVG Styles for Wires */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        path {
+            fill: none;
+            stroke-width: 5; /* Cables más gruesos */
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.2s ease, filter 0.2s ease;
+        }
+
+        /* Estados de los cables */
+        .wire-off { stroke: #555; opacity: 0.4; } /* Estado inactivo/desconectado */
+        
+        .wire-on { 
+            stroke: var(--wire-on); 
+            filter: drop-shadow(0 0 6px var(--wire-on)); 
+            opacity: 1; 
+        } /* Estado Alto (1) */
+
+        .wire-low { 
+            stroke: var(--wire-low-active); 
+            filter: drop-shadow(0 0 4px var(--wire-low-active));
+            opacity: 0.8; 
+        } /* Estado Bajo Activo (0) */
+
+
+        /* Logic Gates (Visual representation) */
+        .gate {
+            position: absolute;
+            width: 110px;
+            height: 90px;
+            border: 3px solid #ddd;
+            border-radius: 0 50% 50% 0; /* Forma básica de OR */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #444, #222);
+            z-index: 2;
+            font-weight: bold;
+            font-size: 1.3em;
+            color: #fff;
+            box-shadow: inset 0 0 10px #000;
+        }
+        
+        /* La curva de entrada para simular NOR/OR */
+        .gate::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: -3px; /* Ajuste fino para alinear bordes */
+            width: 40px;
+            height: calc(100% + 6px);
+            background-color: var(--container-bg); /* Color del fondo para "recortar" */
+            border-right: 3px solid #ddd;
+            border-radius: 50%;
+        }
+
+        /* La burbuja (NOT) */
+        .gate::after {
+            content: '';
+            position: absolute;
+            right: -16px;
+            width: 14px;
+            height: 14px;
+            background: var(--container-bg);
+            border: 3px solid #ddd;
+            border-radius: 50%;
+        }
+
+        #gate-top { top: 75px; left: 250px; }
+        #gate-bot { top: 235px; left: 250px; }
+
+        /* Controls (Buttons) */
+        .control-wrapper {
+            position: absolute;
+            left: 40px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+        #wrap-R { top: 95px; }
+        #wrap-S { top: 255px; }
+
+        .label-input { 
+            font-family: monospace; 
+            font-size: 1.4em; 
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        .control-btn {
+            cursor: pointer;
+            padding: 10px 0;
+            width: 70px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.4rem;
+            transition: all 0.1s ease-in-out;
+            text-align: center;
+            outline: none;
+        }
+        
+        .control-btn:active { transform: scale(0.95); }
+
+        .btn-off { 
+            background: linear-gradient(#555, #333); 
+            color: #ccc; 
+            border: 2px solid #666; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .btn-on { 
+            background: var(--wire-on); 
+            color: black; 
+            border: 2px solid #fff; 
+            box-shadow: 0 0 15px var(--wire-on);
+        }
+
+        /* Outputs (LEDs) */
+        .output-wrapper {
+            position: absolute;
+            right: 40px;
+            display: flex;
+            align-items: center;
+            z-index: 2;
+        }
+        #wrap-Q { top: 95px; }
+        #wrap-Qnot { top: 255px; }
+
+        .led {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #444;
+            background: radial-gradient(circle at 30% 30%, #600, #300); /* Apagado realista */
+            transition: all 0.2s;
+            margin-right: 15px;
+        }
+
+        .led.on {
+            background: radial-gradient(circle at 30% 30%, #ff5555, #ff0000); /* Encendido brillante */
+            box-shadow: 0 0 25px var(--output-on), inset 0 0 10px #ffaaaa;
+            border-color: #ffaaaa;
+        }
+
+        .label-output { 
+            font-family: monospace; 
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Flip-Flop SR (Latch NOR)</h1>
+    <p class="subtitle">Experimento Interactivo: Pulsa <b>S</b> (Set) o <b>R</b> (Reset).</p>
+
+    <div class="container">
+        <div class="circuit-area">
+            <svg viewBox="0 0 600 400">
+                <path id="wire-R-in" d="M 130 120 L 230 120" class="wire-off" />
+                <path id="wire-S-in" d="M 130 280 L 230 280" class="wire-off" />
+
+                <path id="wire-feedback-Q" d="M 380 120 L 410 120 L 410 210 L 210 210 L 210 300 L 230 300" class="wire-off" />
+                
+                <path id="wire-feedback-Qnot" d="M 380 280 L 430 280 L 430 190 L 190 190 L 190 140 L 230 140" class="wire-off" />
+
+                <path id="wire-out-Q" d="M 410 120 L 500 120" class="wire-off" />
+                <path id="wire-out-Qnot" d="M 430 280 L 500 280" class="wire-off" />
+            </svg>
+
+            <div class="control-wrapper" id="wrap-R">
+                <div class="label-input">R</div>
+                <button id="btn-R" class="control-btn btn-off" onclick="toggleState('R')">0</button>
+            </div>
+
+            <div class="control-wrapper" id="wrap-S">
+                <div class="label-input">S</div>
+                <button id="btn-S" class="control-btn btn-off" onclick="toggleState('S')">0</button>
+            </div>
+
+            <div id="gate-top" class="gate">NOR</div>
+            <div id="gate-bot" class="gate">NOR</div>
+
+            <div class="output-wrapper" id="wrap-Q">
+                <div id="led-Q" class="led"></div>
+                <div class="label-output">Q</div>
+            </div>
+
+            <div class="output-wrapper" id="wrap-Qnot">
+                <div id="led-Qnot" class="led"></div>
+                <div class="label-output">Q'</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado inicial del sistema
+        // Empezamos en un estado estable válido (por ejemplo, Reset)
+        let state = {
+            S: 0,
+            R: 0,
+            Q: 0,
+            Qnot: 1
+        };
+
+        function toggleState(input) {
+            // Cambiar estado del botón presionado (toggle 0 <-> 1)
+            if (input === 'S') state.S = state.S === 0 ? 1 : 0;
+            if (input === 'R') state.R = state.R === 0 ? 1 : 0;
+            
+            // Calcular el nuevo estado de las salidas basado en las entradas
+            updateLogic();
+        }
+
+        function updateLogic() {
+            // Lógica de Latch SR con compuertas NOR.
+            // Regla NOR: La salida es 1 SOLO si ambas entradas son 0.
+
+            // 1. Caso INVÁLIDO (S=1, R=1)
+            // En un circuito NOR real, si ambos son 1, ambas salidas se fuerzan a 0.
+            if (state.S === 1 && state.R === 1) {
+                state.Q = 0;
+                state.Qnot = 0;
+            }
+            // 2. Caso SET (S=1, R=0)
+            // S=1 fuerza a la compuerta de abajo a dar output 0 (Qnot=0).
+            // Ese 0 sube a la compuerta de arriba. Como R=0 y la retroalimentación es 0, Q se vuelve 1.
+            else if (state.S === 1 && state.R === 0) {
+                state.Q = 1;
+                state.Qnot = 0;
+            }
+            // 3. Caso RESET (S=0, R=1)
+            // R=1 fuerza a la compuerta de arriba a dar output 0 (Q=0).
+            // Ese 0 baja. Como S=0 y la retroalimentación es 0, Qnot se vuelve 1.
+            else if (state.S === 0 && state.R === 1) {
+                state.Q = 0;
+                state.Qnot = 1;
+            }
+            // 4. Caso MEMORIA / HOLD (S=0, R=0)
+            // No hacemos nada. El estado Q y Qnot se mantiene igual que estaba antes.
+
+            // Una vez calculados los estados, actualizamos la visualización.
+            updateView();
+        }
+
+        function updateView() {
+            // 1. Actualizar Botones (Inputs)
+            updateBtnVisual('btn-S', state.S);
+            updateBtnVisual('btn-R', state.R);
+
+            // 2. Actualizar LEDs (Outputs)
+            const ledQ = document.getElementById('led-Q');
+            const ledQnot = document.getElementById('led-Qnot');
+            
+            // Añadir o quitar la clase 'on' basado en el estado
+            state.Q === 1 ? ledQ.classList.add('on') : ledQ.classList.remove('on');
+            state.Qnot === 1 ? ledQnot.classList.add('on') : ledQnot.classList.remove('on');
+
+            // 3. Actualizar Cables (Visualización del flujo)
+            
+            // Cables de entrada directa
+            setWireVisual('wire-S-in', state.S);
+            setWireVisual('wire-R-in', state.R);
+
+            // Cables de retroalimentación y salida
+            // El cable 'wire-feedback-Q' y 'wire-out-Q' llevan el estado de Q.
+            setWireVisual('wire-feedback-Q', state.Q);
+            setWireVisual('wire-out-Q', state.Q);
+
+            // El cable 'wire-feedback-Qnot' y 'wire-out-Qnot' llevan el estado de Qnot.
+            setWireVisual('wire-feedback-Qnot', state.Qnot);
+            setWireVisual('wire-out-Qnot', state.Qnot);
+        }
+
+        // Función auxiliar para cambiar el estilo de los botones
+        function updateBtnVisual(id, val) {
+            const btn = document.getElementById(id);
+            if (val === 1) {
+                btn.classList.remove('btn-off');
+                btn.classList.add('btn-on');
+                btn.innerText = "1";
+            } else {
+                btn.classList.remove('btn-on');
+                btn.classList.add('btn-off');
+                btn.innerText = "0";
+            }
+        }
+
+        // Función auxiliar para cambiar el color de los cables SVG
+        function setWireVisual(id, val) {
+            const wire = document.getElementById(id);
+            if (val === 1) {
+                // Verde brillante para 1 lógico
+                wire.setAttribute("class", "wire-on");
+            } else {
+                // Rojo oscuro/tenue para 0 lógico
+                // (Podríamos usar 'wire-low' si quisieramos resaltar el 0 activo, pero 'wire-off' es más limpio para la memoria)
+                wire.setAttribute("class", "wire-off"); 
+            }
+        }
+
+        // Inicializar la vista al cargar la página
+        updateView();
+
+    </script>
+</body>
+</html>
