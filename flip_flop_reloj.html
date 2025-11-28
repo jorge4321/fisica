@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip-Flop SR con Reloj (Clocked)</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --wire-off: #4a1c1c; 
+            --wire-on: #00ff00;
+            --gate-bg: linear-gradient(135deg, #444, #222);
+            --container-bg: #16213e;
+            --container-border: #0f3460;
+            --clk-color: #00d4ff; /* Color especial para el reloj */
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 { margin-bottom: 5px; font-weight: 300; }
+        p.subtitle { color: #aaa; margin-bottom: 20px; font-weight: 300; font-size: 0.9rem; }
+
+        .container {
+            position: relative;
+            width: 850px; /* Más ancho para las compuertas extra */
+            height: 500px;
+            background: var(--container-bg);
+            border: 3px solid var(--container-border);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .circuit-area {
+            position: relative;
+            width: 800px;
+            height: 450px;
+        }
+
+        /* SVG Wires */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        path {
+            fill: none;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.2s ease, filter 0.2s ease;
+        }
+
+        .wire-off { stroke: #444; opacity: 0.4; }
+        .wire-on { stroke: var(--wire-on); filter: drop-shadow(0 0 6px var(--wire-on)); opacity: 1; }
+        
+        /* Estilo especial para cuando el Reloj está activo */
+        .wire-clk-on { stroke: var(--clk-color); filter: drop-shadow(0 0 8px var(--clk-color)); opacity: 1; }
+
+        /* Gates Generic */
+        .gate {
+            position: absolute;
+            width: 90px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gate-bg);
+            z-index: 2;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #fff;
+            border: 2px solid #bbb;
+        }
+
+        /* AND Gate Shape (D-Shape) */
+        .gate-and {
+            border-radius: 5px 50px 50px 5px;
+            left: 220px;
+        }
+
+        /* NOR Gate Shape (Curved) */
+        .gate-nor {
+            border-radius: 0 50% 50% 0;
+            left: 500px;
+        }
+        .gate-nor::before { /* Input cutout */
+            content: ''; position: absolute; left: -15px; top: -2px;
+            width: 30px; height: calc(100% + 4px);
+            background-color: var(--container-bg);
+            border-right: 2px solid #bbb; border-radius: 50%;
+        }
+        .gate-nor::after { /* Bubble */
+            content: ''; position: absolute; right: -12px;
+            width: 10px; height: 10px; background: var(--container-bg);
+            border: 2px solid #bbb; border-radius: 50%;
+        }
+
+        /* Positions */
+        #gate-and-top { top: 80px; }
+        #gate-and-bot { top: 300px; }
+        #gate-nor-top { top: 80px; }
+        #gate-nor-bot { top: 300px; }
+
+        /* Labels inside gates */
+        .gate span { z-index: 5; position: relative; }
+
+        /* Inputs Buttons */
+        .control-wrapper {
+            position: absolute;
+            left: 30px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        /* Botones específicos positions */
+        #wrap-R { top: 90px; }
+        #wrap-CLK { top: 210px; left: 10px; } /* El reloj va al medio */
+        #wrap-S { top: 310px; }
+
+        .label-input { 
+            font-family: monospace; font-size: 1.4em; font-weight: bold; margin-right: 10px; 
+            width: 30px; text-align: right;
+        }
+
+        .control-btn {
+            cursor: pointer; padding: 8px 0; width: 60px;
+            border: none; border-radius: 6px; font-weight: bold; font-size: 1.2rem;
+            transition: all 0.1s; text-align: center; color: #ccc;
+            background: #333; border: 2px solid #555;
+        }
+        
+        .btn-on { 
+            background: var(--wire-on); color: black; border-color: #fff; box-shadow: 0 0 10px var(--wire-on); 
+        }
+        
+        /* Botón de Reloj especial */
+        #btn-CLK.btn-on {
+            background: var(--clk-color); color: black; border-color: #fff; box-shadow: 0 0 15px var(--clk-color);
+        }
+
+        /* Outputs (LEDs) */
+        .output-wrapper { position: absolute; right: 50px; display: flex; align-items: center; z-index: 2; }
+        #wrap-Q { top: 95px; }
+        #wrap-Qnot { top: 315px; }
+
+        .led {
+            width: 40px; height: 40px; border-radius: 50%; border: 3px solid #444;
+            background: #300; transition: all 0.2s; margin-right: 15px;
+        }
+        .led.on { background: #ff0000; box-shadow: 0 0 20px red; border-color: #ffaaaa; }
+
+        .label-output { font-family: monospace; font-size: 1.4em; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <h1>Flip-Flop SR Sincrónico (con Reloj)</h1>
+    <p class="subtitle">
+        1. Pon datos en <b>S</b> o <b>R</b>. &nbsp;|&nbsp; 
+        2. Activa el <b>CLK (Reloj)</b> para guardar el dato. &nbsp;|&nbsp; 
+        3. Apaga <b>CLK</b> para bloquear la memoria.
+    </p>
+
+    <div class="container">
+        <div class="circuit-area">
+            <svg viewBox="0 0 800 450">
+                <path id="w-R" d="M 100 100 L 220 100" class="wire-off" />
+                
+                <path id="w-S" d="M 100 320 L 220 320" class="wire-off" />
+
+                <path id="w-CLK-main" d="M 100 225 L 160 225" class="wire-off" />
+                <path id="w-CLK-up" d="M 160 225 L 160 130 L 220 130" class="wire-off" />
+                <path id="w-CLK-down" d="M 160 225 L 160 350 L 220 350" class="wire-off" />
+
+                <path id="w-AND-top-out" d="M 310 115 L 500 115" class="wire-off" />
+                <path id="w-AND-bot-out" d="M 310 335 L 500 335" class="wire-off" />
+
+                <path id="w-fb-Q" d="M 600 115 L 630 115 L 630 225 L 450 225 L 450 315 L 500 315" class="wire-off" />
+                
+                <path id="w-fb-Qnot" d="M 600 335 L 650 335 L 650 200 L 430 200 L 430 135 L 500 135" class="wire-off" />
+
+                <path id="w-out-Q" d="M 630 115 L 700 115" class="wire-off" />
+                <path id="w-out-Qnot" d="M 650 335 L 700 335" class="wire-off" />
+            </svg>
+
+            <div class="control-wrapper" id="wrap-R">
+                <div class="label-input">R</div>
+                <button id="btn-R" class="control-btn" onclick="toggle('R')">0</button>
+            </div>
+            
+            <div class="control-wrapper" id="wrap-CLK">
+                <div class="label-input" style="color:var(--clk-color)">CLK</div>
+                <button id="btn-CLK" class="control-btn" onclick="toggle('CLK')">0</button>
+            </div>
+
+            <div class="control-wrapper" id="wrap-S">
+                <div class="label-input">S</div>
+                <button id="btn-S" class="control-btn" onclick="toggle('S')">0</button>
+            </div>
+
+            <div id="gate-and-top" class="gate gate-and"><span>AND</span></div>
+            <div id="gate-and-bot" class="gate gate-and"><span>AND</span></div>
+
+            <div id="gate-nor-top" class="gate gate-nor"><span>NOR</span></div>
+            <div id="gate-nor-bot" class="gate gate-nor"><span>NOR</span></div>
+
+            <div class="output-wrapper" id="wrap-Q">
+                <div id="led-Q" class="led"></div>
+                <div class="label-output">Q</div>
+            </div>
+            <div class="output-wrapper" id="wrap-Qnot">
+                <div id="led-Qnot" class="led"></div>
+                <div class="label-output">Q'</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ESTADO DEL SISTEMA
+        let s = {
+            S: 0, R: 0, CLK: 0, // Entradas
+            R_gated: 0, S_gated: 0, // Intermedias (Salida de ANDs)
+            Q: 0, Qnot: 1 // Salidas Latch
+        };
+
+        function toggle(inp) {
+            // Cambiar estado 0 <-> 1
+            if(inp === 'S') s.S = !s.S ? 1 : 0;
+            if(inp === 'R') s.R = !s.R ? 1 : 0;
+            if(inp === 'CLK') s.CLK = !s.CLK ? 1 : 0;
+            
+            updateLogic();
+        }
+
+        function updateLogic() {
+            // 1. ETAPA DE CONTROL (AND Gates)
+            // Solo pasa la señal si CLK es 1
+            s.R_gated = (s.R === 1 && s.CLK === 1) ? 1 : 0;
+            s.S_gated = (s.S === 1 && s.CLK === 1) ? 1 : 0;
+
+            // 2. ETAPA DE MEMORIA (Latch NOR)
+            // Usamos las señales "gated" como entradas al latch
+            
+            // Caso Inválido (S=1, R=1, CLK=1)
+            if (s.S_gated === 1 && s.R_gated === 1) {
+                s.Q = 0; s.Qnot = 0; 
+            }
+            // Set (S=1, CLK=1)
+            else if (s.S_gated === 1 && s.R_gated === 0) {
+                s.Q = 1; s.Qnot = 0;
+            }
+            // Reset (R=1, CLK=1)
+            else if (s.S_gated === 0 && s.R_gated === 1) {
+                s.Q = 0; s.Qnot = 1;
+            }
+            // Hold (CLK=0 o ambas entradas 0) -> Mantiene estado anterior
+            
+            updateView();
+        }
+
+        function updateView() {
+            // --- BOTONES ---
+            setBtn('btn-S', s.S);
+            setBtn('btn-R', s.R);
+            setBtn('btn-CLK', s.CLK);
+
+            // --- LEDS ---
+            const ledQ = document.getElementById('led-Q');
+            const ledQnot = document.getElementById('led-Qnot');
+            s.Q ? ledQ.classList.add('on') : ledQ.classList.remove('on');
+            s.Qnot ? ledQnot.classList.add('on') : ledQnot.classList.remove('on');
+
+            // --- CABLES ---
+            // Entradas directas
+            setWire('w-R', s.R);
+            setWire('w-S', s.S);
+            
+            // Reloj (Azul cyan)
+            const clkClass = s.CLK ? 'wire-clk-on' : 'wire-off';
+            document.getElementById('w-CLK-main').setAttribute('class', clkClass);
+            document.getElementById('w-CLK-up').setAttribute('class', clkClass);
+            document.getElementById('w-CLK-down').setAttribute('class', clkClass);
+
+            // Intermedios (Salida de ANDs)
+            setWire('w-AND-top-out', s.R_gated);
+            setWire('w-AND-bot-out', s.S_gated);
+
+            // Salidas Latch y Feedback
+            setWire('w-fb-Q', s.Q);
+            setWire('w-out-Q', s.Q);
+            setWire('w-fb-Qnot', s.Qnot);
+            setWire('w-out-Qnot', s.Qnot);
+        }
+
+        function setBtn(id, val) {
+            const btn = document.getElementById(id);
+            if(val) {
+                btn.classList.add('btn-on'); btn.innerText = "1";
+            } else {
+                btn.classList.remove('btn-on'); btn.innerText = "0";
+            }
+        }
+
+        function setWire(id, val) {
+            document.getElementById(id).setAttribute('class', val ? 'wire-on' : 'wire-off');
+        }
+
+        // Init
+        updateView();
+    </script>
+</body>
+</html>
