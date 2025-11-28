@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtros RC: Visualización Dinámica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --slide-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-low: #22d3ee; /* Cian para Paso Bajo */
+            --accent-high: #f472b6; /* Rosa para Paso Alto */
+            --accent-gold: #fbbf24;
+            --grid-color: rgba(148, 163, 184, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #000;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Contenedor Maestro Escalable */
+        .deck-container {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+            overflow: hidden;
+            transform-origin: center center;
+            transition: transform 0.2s ease-out;
+        }
+
+        /* Diapositivas */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 50px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Tipografía */
+        h1, h2, h3 { text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-size: 72px; font-weight: 700; background: linear-gradient(to right, var(--accent-low), var(--accent-high)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
+        h2 { font-size: 42px; color: var(--text-primary); border-left: 6px solid var(--accent-gold); padding-left: 20px; margin-bottom: 30px; }
+        h3 { font-size: 24px; color: var(--accent-gold); margin-bottom: 15px; font-family: 'Share Tech Mono', monospace; }
+        p, li { font-size: 20px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 15px; }
+
+        /* Estructura */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            height: 100%;
+            align-items: center;
+        }
+
+        .visual-box {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            height: 400px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .formula-box {
+            font-family: 'Times New Roman', serif;
+            font-size: 32px;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-low);
+            display: inline-block;
+            margin-top: 20px;
+            color: #fff;
+        }
+
+        /* ANIMACIONES CSS */
+        @keyframes flow {
+            to { stroke-dashoffset: -100; }
+        }
+
+        @keyframes pulse-cap {
+            0% { fill: #334155; }
+            50% { fill: var(--accent-gold); }
+            100% { fill: #334155; }
+        }
+
+        @keyframes wave-motion {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50px); }
+        }
+        
+        @keyframes signal-pass {
+            0% { opacity: 0.2; transform: translateX(-20px); }
+            50% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0.2; transform: translateX(20px); }
+        }
+
+        /* Clases para SVG */
+        .wire { stroke: #64748b; stroke-width: 3; fill: none; }
+        .component { stroke: #fff; stroke-width: 3; fill: none; }
+        .electron-flow {
+            stroke: var(--accent-gold);
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 10, 10;
+            animation: flow 1s linear infinite;
+        }
+        .signal-path-low { stroke: var(--accent-low); stroke-width: 4; fill: none; }
+        .signal-path-high { stroke: var(--accent-high); stroke-width: 4; fill: none; }
+
+        /* Navegación */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        .btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono';
+            transition: 0.3s;
+        }
+        .btn:hover { background: var(--accent-gold); color: black; }
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: linear-gradient(to right, var(--accent-low), var(--accent-high));
+            transition: width 0.3s;
+        }
+        .page-number {
+            position: absolute;
+            bottom: 35px;
+            left: 40px;
+            font-family: 'Share Tech Mono';
+            color: #64748b;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="deck-container" id="deck">
+    <div class="progress-bar" id="progress"></div>
+
+    <!-- 1. PORTADA -->
+    <div class="slide active">
+        <div style="text-align: center;">
+            <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 20px;">
+                <i class="fa-solid fa-wave-square" style="font-size: 80px; color: var(--accent-low);"></i>
+                <i class="fa-solid fa-bolt" style="font-size: 80px; color: var(--accent-high);"></i>
+            </div>
+            <h1>FILTROS RC</h1>
+            <p style="font-size: 28px; color: var(--text-primary);">Visualización Interactiva & Animada</p>
+            <p style="margin-top: 40px; font-family: 'Share Tech Mono'; color: var(--accent-gold);">[ PASO BAJO | PASO ALTO ]</p>
+        </div>
+    </div>
+
+    <!-- 2. INTRODUCCIÓN -->
+    <div class="slide">
+        <h2>¿Qué es un Filtro RC?</h2>
+        <div class="two-column">
+            <div>
+                <p>Es un circuito formado por una <strong>Resistencia (R)</strong> y un <strong>Condensador (C)</strong>.</p>
+                <p>Su función es <strong>discriminar frecuencias</strong>: deja pasar unas y bloquea otras.</p>
+                <ul>
+                    <li><span style="color:var(--accent-low)">Paso Bajo:</span> Pasan los graves.</li>
+                    <li><span style="color:var(--accent-high)">Paso Alto:</span> Pasan los agudos.</li>
+                </ul>
+            </div>
+            <div class="visual-box">
+                <!-- Animación Genérica Señal -->
+                <svg viewBox="0 0 300 200">
+                    <path d="M 0 100 Q 25 50, 50 100 T 100 100 T 150 100" stroke="#444" fill="none" stroke-width="2"/>
+                    <path d="M 0 100 Q 25 50, 50 100 T 100 100 T 150 100" class="signal-path-low" style="stroke-dasharray: 200; stroke-dashoffset: 200; animation: flow 2s linear infinite;"/>
+                    <rect x="150" y="50" width="50" height="100" fill="none" stroke="white" stroke-width="2"/>
+                    <text x="165" y="105" fill="white" font-size="12">RC</text>
+                    <path d="M 200 100 Q 225 80, 250 100 T 300 100" class="signal-path-high" style="stroke-dasharray: 200; stroke-dashoffset: 200; animation: flow 2s linear infinite; animation-delay: 1s;"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. COMPONENTE CLAVE: CONDENSADOR -->
+    <div class="slide">
+        <h2>El Corazón: Reactancia (<math><msub><mi>X</mi><mi>c</mi></msub></math>)</h2>
+        <div class="two-column">
+            <div>
+                <p>El condensador cambia su resistencia según la frecuencia.</p>
+                <div class="formula-box">
+                    <math><msub><mi>X</mi><mi>c</mi></msub> <mo>=</mo> <mfrac><mn>1</mn><mrow><mn>2</mn><mi>&#960;</mi><mi>f</mi><mi>C</mi></mrow></mfrac></math>
+                </div>
+                <p style="margin-top: 20px;">
+                    <i class="fa-solid fa-arrow-down"></i> Frecuencia baja = Resistencia Alta (Muro)<br>
+                    <i class="fa-solid fa-arrow-up"></i> Frecuencia alta = Resistencia Baja (Cable)
+                </p>
+            </div>
+            <div class="visual-box">
+                <!-- Animación Condensador -->
+                <svg viewBox="0 0 200 200">
+                    <line x1="100" y1="20" x2="100" y2="80" class="wire"/>
+                    <line x1="60" y1="80" x2="140" y2="80" class="component" style="stroke: var(--accent-gold);"/>
+                    <line x1="60" y1="100" x2="140" y2="100" class="component" style="stroke: var(--accent-gold);"/>
+                    <line x1="100" y1="100" x2="100" y2="180" class="wire"/>
+                    <!-- Partículas -->
+                    <circle cx="100" cy="50" r="5" fill="#fff">
+                        <animate attributeName="cy" values="20;80" dur="1s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="1;0" dur="1s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. PASO BAJO: CIRCUITO -->
+    <div class="slide">
+        <h2 style="color: var(--accent-low); border-color: var(--accent-low);">Filtro Paso Bajo (LPF)</h2>
+        <div class="two-column">
+            <div>
+                <h3>Configuración</h3>
+                <p>La <strong>Resistencia</strong> está en serie.</p>
+                <p>El <strong>Condensador</strong> deriva a tierra.</p>
+                <p>Las frecuencias altas encuentran un camino fácil por el condensador y se van a tierra, no llegan a la salida.</p>
+            </div>
+            <div class="visual-box">
+                <svg viewBox="0 0 400 300">
+                    <!-- Circuito -->
+                    <path d="M 50 100 L 150 100" class="wire"/>
+                    <rect x="150" y="90" width="60" height="20" class="component"/> <!-- R -->
+                    <path d="M 210 100 L 350 100" class="wire"/>
+                    <path d="M 280 100 L 280 150" class="wire"/>
+                    <line x1="260" y1="150" x2="300" y2="150" class="component" style="stroke: var(--accent-low)"/> <!-- C top -->
+                    <line x1="260" y1="170" x2="300" y2="170" class="component" style="stroke: var(--accent-low)"/> <!-- C bot -->
+                    <path d="M 280 170 L 280 220" class="wire"/>
+                    <line x1="260" y1="220" x2="300" y2="220" class="wire"/> <!-- GND -->
+                    
+                    <text x="170" y="80" fill="white" font-family="monospace">R</text>
+                    <text x="305" y="165" fill="var(--accent-low)" font-family="monospace">C</text>
+                    <text x="360" y="105" fill="white" font-family="monospace">Vout</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. ANIMACIÓN PASO BAJO -->
+    <div class="slide">
+        <h2>Simulación: Paso Bajo</h2>
+        <p>Observa cómo la señal rápida (ruido) se pierde por el condensador.</p>
+        <div class="visual-box" style="height: 500px;">
+            <svg viewBox="0 0 600 300">
+                <!-- Input Mixed Signal -->
+                <text x="50" y="50" fill="white">Entrada (Mix)</text>
+                <path d="M 50 150 L 150 150" class="wire"/>
+                <!-- Animating slow wave -->
+                <path d="M 50 150 Q 100 100, 150 150" stroke="var(--accent-low)" fill="none" stroke-width="3">
+                    <animate attributeName="d" values="M 50 150 Q 100 100, 150 150; M 50 150 Q 100 200, 150 150; M 50 150 Q 100 100, 150 150" dur="2s" repeatCount="indefinite"/>
+                </path>
+                <!-- Animating fast noise -->
+                <path d="M 50 150 L 60 140 L 70 160 L 80 140 L 90 160 L 100 140 L 150 150" stroke="var(--accent-high)" fill="none" opacity="0.7">
+                    <animateTransform attributeName="transform" type="translate" values="0 0; 50 0" dur="0.5s" repeatCount="indefinite"/>
+                </path>
+
+                <!-- Box Filter -->
+                <rect x="150" y="100" width="100" height="100" fill="#1e293b" stroke="white"/>
+                <text x="165" y="155" fill="white">LPF</text>
+
+                <!-- Output Signal -->
+                <text x="400" y="50" fill="white">Salida</text>
+                <path d="M 250 150 L 450 150" class="wire"/>
+                <!-- Only Slow wave passes -->
+                <path d="M 250 150 Q 350 100, 450 150" stroke="var(--accent-low)" fill="none" stroke-width="4">
+                    <animate attributeName="d" values="M 250 150 Q 350 100, 450 150; M 250 150 Q 350 200, 450 150; M 250 150 Q 350 100, 450 150" dur="2s" repeatCount="indefinite"/>
+                </path>
+                
+                <!-- Drained High Freq -->
+                <path d="M 200 200 L 200 250" stroke="var(--accent-high)" stroke-dasharray="5,5" stroke-width="2">
+                     <animate attributeName="stroke-dashoffset" to="-20" dur="0.5s" repeatCount="indefinite"/>
+                </path>
+                <text x="180" y="270" fill="var(--accent-high)" font-size="12">Alta frec. a GND</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 6. BODE PASO BAJO -->
+    <div class="slide">
+        <h2>Diagrama de Bode (LPF)</h2>
+        <div class="two-column">
+            <div>
+                <p>Muestra la ganancia vs frecuencia.</p>
+                <p>A partir de la frecuencia de corte (<math><msub><mi>f</mi><mi>c</mi></msub></math>), la señal cae 20dB por década.</p>
+            </div>
+            <div class="visual-box">
+                <svg viewBox="0 0 400 300">
+                    <line x1="50" y1="250" x2="350" y2="250" stroke="#fff" stroke-width="2"/> <!-- X axis -->
+                    <line x1="50" y1="50" x2="50" y2="250" stroke="#fff" stroke-width="2"/> <!-- Y axis -->
+                    <!-- Curve -->
+                    <path d="M 50 100 L 150 100 Q 200 100, 350 250" stroke="var(--accent-low)" stroke-width="4" fill="none"/>
+                    <circle cx="180" cy="115" r="5" fill="var(--accent-gold)"/>
+                    <text x="180" y="100" fill="var(--accent-gold)">fc (-3dB)</text>
+                    <text x="300" y="240" fill="#fff" font-size="12">Frecuencia</text>
+                    <text x="10" y="100" fill="#fff" font-size="12">0dB</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. APLICACIÓN PASO BAJO: SUBWOOFER -->
+    <div class="slide">
+        <h2>Aplicación: Audio</h2>
+        <div class="two-column">
+            <div>
+                <h3>El Subwoofer</h3>
+                <p>Tu altavoz de graves no quiere reproducir la voz del cantante ni los platillos.</p>
+                <p>Un filtro paso bajo elimina los agudos antes de que lleguen al altavoz.</p>
+            </div>
+            <div class="visual-box">
+                <i class="fa-solid fa-music" style="font-size: 100px; color: var(--accent-low);"></i>
+                <div style="position: absolute; bottom: 20px; color: var(--accent-low);">Solo graves (Boom Boom)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. PASO ALTO: CIRCUITO -->
+    <div class="slide">
+        <h2 style="color: var(--accent-high); border-color: var(--accent-high);">Filtro Paso Alto (HPF)</h2>
+        <div class="two-column">
+            <div>
+                <h3>Configuración Inversa</h3>
+                <p>El <strong>Condensador</strong> está en SERIE.</p>
+                <p>La <strong>Resistencia</strong> deriva a tierra.</p>
+                <p>El condensador bloquea la corriente continua y los graves (muro), dejando pasar solo los cambios rápidos.</p>
+            </div>
+            <div class="visual-box">
+                <svg viewBox="0 0 400 300">
+                    <path d="M 50 100 L 150 100" class="wire"/>
+                    <line x1="150" y1="80" x2="150" y2="120" class="component" style="stroke: var(--accent-high)"/> <!-- C left -->
+                    <line x1="170" y1="80" x2="170" y2="120" class="component" style="stroke: var(--accent-high)"/> <!-- C right -->
+                    <path d="M 170 100 L 350 100" class="wire"/>
+                    
+                    <path d="M 260 100 L 260 150" class="wire"/>
+                    <rect x="250" y="150" width="20" height="60" class="component"/> <!-- R -->
+                    <path d="M 260 210 L 260 230" class="wire"/>
+                    <line x1="240" y1="230" x2="280" y2="230" class="wire"/> <!-- GND -->
+                    
+                    <text x="145" y="70" fill="var(--accent-high)" font-family="monospace">C</text>
+                    <text x="280" y="180" fill="white" font-family="monospace">R</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. ANIMACIÓN PASO ALTO -->
+    <div class="slide">
+        <h2>Simulación: Paso Alto</h2>
+        <p>Observa cómo la onda lenta es bloqueada, solo el "ruido" rápido cruza.</p>
+        <div class="visual-box" style="height: 500px;">
+            <svg viewBox="0 0 600 300">
+                <!-- Input -->
+                <text x="50" y="50" fill="white">Entrada</text>
+                <path d="M 50 150 L 150 150" class="wire"/>
+                <!-- Slow wave -->
+                <path d="M 50 150 Q 100 100, 150 150" stroke="var(--accent-low)" fill="none" stroke-width="3" opacity="0.5">
+                    <animate attributeName="d" values="M 50 150 Q 100 100, 150 150; M 50 150 Q 100 200, 150 150; M 50 150 Q 100 100, 150 150" dur="2s" repeatCount="indefinite"/>
+                </path>
+                <!-- Fast wave -->
+                <path d="M 50 150 L 60 140 L 70 160 L 80 140 L 90 160 L 100 140 L 150 150" stroke="var(--accent-high)" fill="none" stroke-width="2">
+                     <animateTransform attributeName="transform" type="translate" values="0 0; 50 0" dur="0.5s" repeatCount="indefinite"/>
+                </path>
+
+                <!-- Box HPF -->
+                <rect x="150" y="100" width="100" height="100" fill="#1e293b" stroke="var(--accent-high)"/>
+                <text x="165" y="155" fill="white">HPF</text>
+                
+                <!-- Blocking visual -->
+                <line x1="160" y1="120" x2="160" y2="180" stroke="var(--accent-high)" stroke-width="4"/>
+                <line x1="170" y1="120" x2="170" y2="180" stroke="var(--accent-high)" stroke-width="4"/>
+
+                <!-- Output -->
+                <text x="400" y="50" fill="white">Salida</text>
+                <path d="M 250 150 L 450 150" class="wire"/>
+                <!-- Only fast wave passes -->
+                <path d="M 250 150 L 260 140 L 270 160 L 280 140 L 290 160 L 300 140 L 350 150" stroke="var(--accent-high)" fill="none" stroke-width="2">
+                     <animateTransform attributeName="transform" type="translate" values="0 0; 50 0" dur="0.5s" repeatCount="indefinite"/>
+                </path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 10. BODE PASO ALTO -->
+    <div class="slide">
+        <h2>Diagrama de Bode (HPF)</h2>
+        <div class="two-column">
+            <div>
+                <p>La curva es opuesta al paso bajo.</p>
+                <p>Las bajas frecuencias están atenuadas. A partir de <math><msub><mi>f</mi><mi>c</mi></msub></math>, la ganancia es 1 (0dB).</p>
+            </div>
+            <div class="visual-box">
+                <svg viewBox="0 0 400 300">
+                    <line x1="50" y1="250" x2="350" y2="250" stroke="#fff" stroke-width="2"/>
+                    <line x1="50" y1="50" x2="50" y2="250" stroke="#fff" stroke-width="2"/>
+                    <!-- Curve rising -->
+                    <path d="M 50 250 Q 150 250, 200 120 Q 220 100, 350 100" stroke="var(--accent-high)" stroke-width="4" fill="none"/>
+                    <circle cx="200" cy="120" r="5" fill="var(--accent-gold)"/>
+                    <text x="210" y="140" fill="var(--accent-gold)">fc</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 11. APLICACIÓN PASO ALTO: TWEETER -->
+    <div class="slide">
+        <h2>Aplicación: Tweeters</h2>
+        <div class="two-column">
+            <div>
+                <p>Los altavoces pequeños (Tweeters) se queman si intentan reproducir bajos potentes.</p>
+                <p>El condensador en serie los protege, dejando pasar solo los agudos cristalinos.</p>
+            </div>
+            <div class="visual-box">
+                 <i class="fa-solid fa-volume-high" style="font-size: 100px; color: var(--accent-high);"></i>
+                 <div style="position: absolute; bottom: 20px; color: var(--accent-high);">Solo agudos (Tss Tss)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 12. FRECUENCIA DE CORTE -->
+    <div class="slide">
+        <h2>La Fórmula Maestra (<math><msub><mi>f</mi><mi>c</mi></msub></math>)</h2>
+        <div class="two-column">
+            <div>
+                <p>¿Dónde ocurre la magia?</p>
+                <p>Es el punto donde la potencia cae a la mitad (-3dB).</p>
+                <div class="formula-box" style="border-color: var(--accent-gold);">
+                    <math><msub><mi>f</mi><mi>c</mi></msub> <mo>=</mo> <mfrac><mn>1</mn><mrow><mn>2</mn><mi>&#960;</mi><mi>R</mi><mi>C</mi></mrow></mfrac></math>
+                </div>
+            </div>
+            <div class="visual-box">
+                <i class="fa-solid fa-calculator" style="font-size: 100px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 13. CONSTANTE DE TIEMPO -->
+    <div class="slide">
+        <h2>Constante de Tiempo (<math><mi>&#964;</mi></math>)</h2>
+        <div class="two-column">
+            <div>
+                <p>No todo es frecuencia. En el tiempo, <math><mi>&#964;</mi> <mo>=</mo> <mi>R</mi> <mo>×</mo> <mi>C</mi></math>.</p>
+                <p>Es el tiempo que tarda el condensador en cargarse al <strong>63.2%</strong>.</p>
+            </div>
+            <div class="visual-box">
+                <!-- Animación Carga -->
+                <svg viewBox="0 0 300 200">
+                    <rect x="50" y="50" width="200" height="100" fill="none" stroke="white"/>
+                    <rect x="50" y="50" width="0" height="100" fill="var(--accent-low)" opacity="0.5">
+                        <animate attributeName="width" values="0; 126; 200" dur="2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
+                    </rect>
+                    <line x1="176" y1="50" x2="176" y2="150" stroke="var(--accent-gold)" stroke-dasharray="5,5"/>
+                    <text x="180" y="40" fill="var(--accent-gold)">63% (tau)</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 14. DESFASE (PHASE SHIFT) -->
+    <div class="slide">
+        <h2>El Desfase</h2>
+        <div class="two-column">
+            <div>
+                <p>Los filtros no solo atenúan, también <strong>retrasan</strong> la señal.</p>
+                <p>En la frecuencia de corte, el desfase es exactamente de <strong>45 grados</strong>.</p>
+            </div>
+            <div class="visual-box">
+                <svg viewBox="0 0 400 200">
+                    <path d="M 0 100 Q 50 0, 100 100 T 200 100" stroke="#444" fill="none" stroke-width="2"/>
+                    <path d="M 20 100 Q 70 0, 120 100 T 220 100" stroke="var(--accent-gold)" fill="none" stroke-width="2"/>
+                    <text x="250" y="100" fill="white">Retraso</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 15. ALISADO PWM (LPF) -->
+    <div class="slide">
+        <h2>Aplicación: PWM a Analógico</h2>
+        <div class="two-column">
+            <div>
+                <p>Si metemos pulsos digitales rápidos (PWM) a un filtro Paso Bajo, el condensador no tiene tiempo de descargarse.</p>
+                <p>Resultado: Un voltaje <strong>promedio</strong> (DAC barato).</p>
+            </div>
+            <div class="visual-box">
+                <svg viewBox="0 0 300 200">
+                    <!-- Square Wave -->
+                    <polyline points="0,150 50,150 50,50 100,50 100,150 150,150 150,50" stroke="#fff" fill="none"/>
+                    <!-- Filtered -->
+                    <path d="M 0 150 Q 50 140, 100 100 Q 150 60, 250 80" stroke="var(--accent-low)" fill="none" stroke-width="4"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 16. DETECCIÓN DE BORDES (HPF) -->
+    <div class="slide">
+        <h2>Aplicación: Detectar Bordes</h2>
+        <div class="two-column">
+            <div>
+                <p>Un Paso Alto actúa como <strong>diferenciador</strong>.</p>
+                <p>Solo responde a cambios bruscos. Convierte una onda cuadrada en picos.</p>
+                <p>Útil para contar pulsos o sincronizar relojes.</p>
+            </div>
+            <div class="visual-box">
+                 <svg viewBox="0 0 300 200">
+                    <!-- Square Wave Input -->
+                    <polyline points="0,150 50,150 50,50 150,50 150,150 250,150" stroke="#444" fill="none" stroke-dasharray="5,5"/>
+                    <!-- Spikes Output -->
+                    <line x1="50" y1="150" x2="50" y2="20" stroke="var(--accent-high)" stroke-width="3"/>
+                    <line x1="150" y1="50" x2="150" y2="180" stroke="var(--accent-high)" stroke-width="3"/>
+                    <text x="60" y="30" fill="var(--accent-high)">Cambio!</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- 17. FILTROS EN CASCADA -->
+    <div class="slide">
+        <h2>Filtros en Cascada</h2>
+        <div class="two-column">
+            <div>
+                <p>¿Un filtro no es suficiente?</p>
+                <p>Conecta dos seguidos (2º orden). La pendiente de corte se vuelve más pronunciada (-40dB/dec).</p>
+                <p>El corte es más "limpio".</p>
+            </div>
+            <div class="visual-box">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="border:1px solid white; padding:20px;">RC</div>
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <div style="border:1px solid white; padding:20px;">RC</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 18. ELIMINACIÓN DE RUIDO -->
+    <div class="slide">
+        <h2>Eliminación de Ruido</h2>
+        <p>En sensores, el cable capta ruido de radiofrecuencia (RF).</p>
+        <p>Un filtro paso bajo en la entrada del microcontrolador limpia la señal antes de leerla.</p>
+        <div class="visual-box" style="height: 200px;">
+             <svg viewBox="0 0 400 100">
+                 <path d="M 0 50 L 50 40 L 60 60 L 70 40 L 100 50" stroke="var(--accent-high)" fill="none"/>
+                 <rect x="120" y="20" width="60" height="60" fill="none" stroke="white"/>
+                 <path d="M 200 50 L 300 50" stroke="var(--accent-low)" stroke-width="4"/>
+             </svg>
+        </div>
+    </div>
+
+    <!-- 19. RESUMEN VISUAL -->
+    <div class="slide">
+        <h2>Tabla Comparativa</h2>
+        <table style="width:100%; border-collapse: collapse; margin-top: 20px; font-size: 24px;">
+            <tr style="border-bottom: 2px solid #475569;">
+                <th style="text-align:left; padding: 20px;">Característica</th>
+                <th style="color:var(--accent-low);">Paso Bajo</th>
+                <th style="color:var(--accent-high);">Paso Alto</th>
+            </tr>
+            <tr>
+                <td style="padding: 20px;">Posición C</td>
+                <td>Paralelo (Tierra)</td>
+                <td>Serie (Paso)</td>
+            </tr>
+            <tr>
+                <td style="padding: 20px;">Pasa...</td>
+                <td>Frecuencias Bajas</td>
+                <td>Frecuencias Altas</td>
+            </tr>
+            <tr>
+                <td style="padding: 20px;">Matemática</td>
+                <td>Integrador</td>
+                <td>Diferenciador</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 20. CIERRE -->
+    <div class="slide">
+        <div style="text-align: center;">
+            <i class="fa-regular fa-circle-check" style="font-size: 100px; color: var(--accent-gold); margin-bottom: 30px;"></i>
+            <h1>GRACIAS</h1>
+            <p>¿Preguntas sobre filtros?</p>
+            <p style="font-size: 16px; margin-top: 50px; color: #64748b;">Generado con IA | HTML5 + CSS3 Animations</p>
+        </div>
+    </div>
+
+    <!-- CONTROLES NAVEGACIÓN -->
+    <div class="page-number" id="page-num">1 / 20</div>
+    <div class="controls">
+        <button class="btn" onclick="changeSlide(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="btn" onclick="changeSlide(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const deck = document.getElementById('deck');
+    const pageNum = document.getElementById('page-num');
+    const progressBar = document.getElementById('progress');
+
+    // AUTO-AJUSTE (ESCALADO)
+    function resizeDeck() {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const baseWidth = 1280;
+        const baseHeight = 720;
+        
+        // Calculamos el factor de escala manteniendo el aspecto
+        const scale = Math.min(
+            windowWidth / baseWidth,
+            windowHeight / baseHeight
+        );
+        
+        // Aplicamos la escala
+        deck.style.transform = `scale(${scale})`;
+    }
+
+    // Navegación
+    function changeSlide(direction) {
+        let newIndex = currentSlide + direction;
+        if(newIndex >= 0 && newIndex < slides.length) {
+            slides[currentSlide].classList.remove('active');
+            slides[newIndex].classList.add('active');
+            currentSlide = newIndex;
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        // Número de página
+        pageNum.innerText = `${currentSlide + 1} / ${slides.length}`;
+        // Barra de progreso
+        const progress = ((currentSlide + 1) / slides.length) * 100;
+        progressBar.style.width = `${progress}%`;
+    }
+
+    // Event Listeners
+    window.addEventListener('resize', resizeDeck);
+    window.addEventListener('load', resizeDeck);
+    
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+        if(e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    // Inicio
+    resizeDeck();
+    updateUI();
+</script>
+
+</body>
+</html>
