@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compuertas Lógicas y Flip-Flops</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --slide-bg: #16213e;
+            --text-color: #e94560;
+            --accent: #0f3460;
+            --on-color: #00ff41; /* Verde Hacker */
+            --off-color: #ff004c; /* Rojo Neon */
+            --wire-color: #53354a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Contenedor principal */
+        #presentation-container {
+            width: 90vw;
+            height: 80vh;
+            position: relative;
+            background-color: var(--slide-bg);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Diapositivas */
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none; /* Ocultas por defecto */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .slide.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-color); }
+        h2 { font-size: 1.8rem; margin-bottom: 1rem; color: #fff; }
+        p { font-size: 1.2rem; max-width: 800px; line-height: 1.6; color: #ccc; margin-bottom: 1.5rem; }
+        ul { text-align: left; font-size: 1.2rem; color: #ccc; }
+        li { margin-bottom: 0.5rem; }
+
+        /* Controles de Navegación */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        button.nav-btn {
+            background-color: var(--text-color);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+
+        button.nav-btn:hover { transform: scale(1.05); }
+        button.nav-btn:disabled { background-color: gray; cursor: not-allowed; }
+
+        .progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background-color: var(--text-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .slide-number {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* --- Estilos para los diagramas interactivos --- */
+        .interactive-area {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .circuit-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: monospace;
+            font-size: 1.5rem;
+        }
+
+        .input-btn {
+            width: 60px;
+            height: 40px;
+            border: 2px solid #fff;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .input-btn.on { background-color: var(--on-color); color: #000; border-color: var(--on-color); }
+        .input-btn.off { background-color: var(--off-color); color: #fff; border-color: var(--off-color); }
+
+        .gate-svg {
+            width: 150px;
+            height: 100px;
+            stroke: white;
+            stroke-width: 3;
+            fill: none;
+            transition: stroke 0.3s;
+        }
+        
+        .output-bulb {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            background-color: #333;
+            box-shadow: 0 0 5px #000;
+            transition: 0.3s;
+        }
+
+        .output-bulb.active {
+            background-color: var(--on-color);
+            box-shadow: 0 0 20px var(--on-color);
+            border-color: var(--on-color);
+        }
+
+        /* Tablas */
+        table { border-collapse: collapse; width: 100%; max-width: 600px; margin-top: 10px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: center; }
+        th { background-color: var(--accent); }
+        .row-highlight { background-color: rgba(233, 69, 96, 0.3); }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.4rem; }
+            p { font-size: 1rem; }
+            .gate-svg { width: 100px; height: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="presentation-container">
+        <div class="slide active">
+            <h1>Electrónica Digital</h1>
+            <h2>Compuertas Lógicas y Flip-Flops</h2>
+            <div style="font-size: 5rem;">⚡</div>
+            <p>Una guía interactiva</p>
+            <small>Usa las flechas para navegar</small>
+        </div>
+
+        <div class="slide">
+            <h2>El Mundo Binario</h2>
+            <p>Las computadoras no entienden palabras ni imágenes, solo entienden dos estados:</p>
+            <div style="display:flex; gap: 50px; font-size: 3rem; margin: 20px;">
+                <div style="color:var(--off-color)">0<br><span style="font-size:1rem">Apagado / Falso</span></div>
+                <div style="color:var(--on-color)">1<br><span style="font-size:1rem">Encendido / Verdadero</span></div>
+            </div>
+            <p>Toda la lógica digital se construye manipulando estos dos valores.</p>
+        </div>
+
+        <div class="slide">
+            <h2>¿Qué es una Compuerta Lógica?</h2>
+            <p>Es un dispositivo físico (basado en transistores) que realiza una función booleana lógica.</p>
+            <div style="border: 2px dashed #fff; padding: 20px; border-radius: 10px;">
+                Entradas (A, B...) ➔ <strong>[ PROCESO ]</strong> ➔ Salida (Q)
+            </div>
+            <p style="margin-top: 10px">Determinan si pasa o no corriente basándose en reglas estrictas.</p>
+        </div>
+
+        <div class="slide">
+            <h2>1. Compuerta NOT (Inversor)</h2>
+            <p>La compuerta más simple. Invierte la entrada.</p>
+            <ul>
+                <li>Si entra <strong>1</strong>, sale <strong>0</strong>.</li>
+                <li>Si entra <strong>0</strong>, sale <strong>1</strong>.</li>
+            </ul>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <button class="input-btn off" onclick="toggleInput(this, 'not')">0</button>
+                    <svg class="gate-svg" viewBox="0 0 100 60">
+                        <path d="M 20 30 L 40 30 M 40 10 L 40 50 L 70 30 Z M 75 30 circle 3" fill="none" stroke="currentColor" />
+                        <line x1="78" y1="30" x2="90" y2="30" stroke="currentColor"/>
+                    </svg>
+                    <div id="out-not" class="output-bulb active"></div>
+                </div>
+                <p>¡Haz clic en el botón para probar!</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>2. Compuerta AND (Y)</h2>
+            <p>La salida es <strong>1</strong> SOLO si <strong>todas</strong> las entradas son 1.</p>
+            <p><em>"Necesito A y B para encender".</em></p>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" onclick="toggleInput(this, 'and')">0</button>
+                        <button class="input-btn off" onclick="toggleInput(this, 'and')">0</button>
+                    </div>
+                    <svg class="gate-svg" viewBox="0 0 100 60">
+                        <path d="M 20 20 L 40 20 M 20 40 L 40 40 M 40 10 L 60 10 Q 90 10 90 30 Q 90 50 60 50 L 40 50 Z" stroke="currentColor"/>
+                        <line x1="90" y1="30" x2="100" y2="30" stroke="currentColor"/>
+                    </svg>
+                    <div id="out-and" class="output-bulb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>3. Compuerta OR (O)</h2>
+            <p>La salida es <strong>1</strong> si <strong>al menos una</strong> entrada es 1.</p>
+            <p><em>"Con que A o B estén activos, es suficiente".</em></p>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" onclick="toggleInput(this, 'or')">0</button>
+                        <button class="input-btn off" onclick="toggleInput(this, 'or')">0</button>
+                    </div>
+                    <svg class="gate-svg" viewBox="0 0 100 60">
+                        <path d="M 20 20 L 40 20 M 20 40 L 40 40 M 35 10 Q 50 30 35 50 Q 80 50 90 30 Q 80 10 35 10 Z" stroke="currentColor"/>
+                        <line x1="90" y1="30" x2="100" y2="30" stroke="currentColor"/>
+                    </svg>
+                    <div id="out-or" class="output-bulb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>4. Compuerta NAND (No Y)</h2>
+            <p>Es lo opuesto a AND. La salida es <strong>0</strong> solo si todas las entradas son 1.</p>
+            <p><em>Es una compuerta universal (se puede crear cualquier circuito solo con NANDs).</em></p>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" onclick="toggleInput(this, 'nand')">0</button>
+                        <button class="input-btn off" onclick="toggleInput(this, 'nand')">0</button>
+                    </div>
+                    <svg class="gate-svg" viewBox="0 0 100 60">
+                        <path d="M 20 20 L 40 20 M 20 40 L 40 40 M 40 10 L 60 10 Q 90 10 90 30 Q 90 50 60 50 L 40 50 Z" stroke="currentColor"/>
+                        <circle cx="94" cy="30" r="3" fill="none" stroke="currentColor"/>
+                        <line x1="97" y1="30" x2="105" y2="30" stroke="currentColor"/>
+                    </svg>
+                    <div id="out-nand" class="output-bulb active"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>5. Compuerta NOR (No O)</h2>
+            <p>Es lo opuesto a OR. La salida es <strong>1</strong> solo si <strong>ninguna</strong> entrada está activa.</p>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" onclick="toggleInput(this, 'nor')">0</button>
+                        <button class="input-btn off" onclick="toggleInput(this, 'nor')">0</button>
+                    </div>
+                    <svg class="gate-svg" viewBox="0 0 100 60">
+                        <path d="M 20 20 L 40 20 M 20 40 L 40 40 M 35 10 Q 50 30 35 50 Q 80 50 90 30 Q 80 10 35 10 Z" stroke="currentColor"/>
+                        <circle cx="94" cy="30" r="3" fill="none" stroke="currentColor"/>
+                        <line x1="97" y1="30" x2="105" y2="30" stroke="currentColor"/>
+                    </svg>
+                    <div id="out-nor" class="output-bulb active"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>6. Compuerta XOR (O Exclusiva)</h2>
+            <p>La salida es <strong>1</strong> si las entradas son <strong>diferentes</strong>.</p>
+            <p>Si ambas son 0 o ambas son 1, la salida es 0.</p>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" onclick="toggleInput(this, 'xor')">0</button>
+                        <button class="input-btn off" onclick="toggleInput(this, 'xor')">0</button>
+                    </div>
+                    <svg class="gate-svg" viewBox="0 0 100 60">
+                        <path d="M 20 20 L 45 20 M 20 40 L 45 40 M 40 10 Q 55 30 40 50 Q 85 50 95 30 Q 85 10 40 10 Z" stroke="currentColor"/>
+                        <path d="M 32 10 Q 47 30 32 50" fill="none" stroke="currentColor"/>
+                        <line x1="95" y1="30" x2="105" y2="30" stroke="currentColor"/>
+                    </svg>
+                    <div id="out-xor" class="output-bulb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>7. Compuerta XNOR</h2>
+            <p>Coincidencia. La salida es <strong>1</strong> si las entradas son <strong>iguales</strong>.</p>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" onclick="toggleInput(this, 'xnor')">0</button>
+                        <button class="input-btn off" onclick="toggleInput(this, 'xnor')">0</button>
+                    </div>
+                    <svg class="gate-svg" viewBox="0 0 100 60">
+                        <path d="M 20 20 L 45 20 M 20 40 L 45 40 M 40 10 Q 55 30 40 50 Q 85 50 95 30 Q 85 10 40 10 Z" stroke="currentColor"/>
+                        <path d="M 32 10 Q 47 30 32 50" fill="none" stroke="currentColor"/>
+                        <circle cx="98" cy="30" r="3" fill="none" stroke="currentColor"/>
+                    </svg>
+                    <div id="out-xnor" class="output-bulb active"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Resumen: Tablas de Verdad</h2>
+            <p>Comportamiento para entradas A=0, B=1</p>
+            <table>
+                <tr><th>Compuerta</th><th>Salida esperada</th><th>Mnemotecnia</th></tr>
+                <tr><td>AND</td><td>0</td><td>Todo o nada</td></tr>
+                <tr><td>OR</td><td>1</td><td>Cualquiera sirve</td></tr>
+                <tr><td>NAND</td><td>1</td><td>Opuesto a AND</td></tr>
+                <tr><td>XOR</td><td>1</td><td>Diferentes</td></tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>Lógica Secuencial: Flip-Flops</h2>
+            <p>Hasta ahora, la salida dependía solo de la entrada actual (Combinacional).</p>
+            <p>Los <strong>Flip-Flops</strong> añaden el concepto de <strong>MEMORIA</strong>.</p>
+            <div style="font-size: 3rem;">🧠</div>
+            <p>Su salida depende de la entrada actual Y del estado anterior.</p>
+        </div>
+
+        <div class="slide">
+            <h2>El Reloj (Clock) ⏰</h2>
+            <p>Los Flip-Flops suelen estar sincronizados por una señal de reloj.</p>
+            <p>Solo cambian de estado cuando el reloj hace una transición (flanco de subida o bajada).</p>
+            <svg width="300" height="100" viewBox="0 0 300 100">
+                <path d="M 0 80 L 50 80 L 50 20 L 100 20 L 100 80 L 150 80 L 150 20 L 200 20 L 200 80 L 250 80" stroke="var(--on-color)" fill="none" stroke-width="3"/>
+                <text x="55" y="15" fill="#fff" font-size="12">Flanco Subida</text>
+            </svg>
+        </div>
+
+        <div class="slide">
+            <h2>Latch SR (Set-Reset)</h2>
+            <p>El bloque básico de memoria. (Asíncrono, sin reloj)</p>
+            <ul>
+                <li><strong>Set (S):</strong> Pone la salida en 1.</li>
+                <li><strong>Reset (R):</strong> Pone la salida en 0.</li>
+                <li><strong>S=0, R=0:</strong> Mantiene el estado (Memoria).</li>
+            </ul>
+             <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" onclick="toggleLatch(this, 'S')">S=0</button>
+                        <button class="input-btn off" onclick="toggleLatch(this, 'R')">R=0</button>
+                    </div>
+                    <div style="width:100px; height:80px; border:2px solid white; display:flex; align-items:center; justify-content:center;">LATCH</div>
+                    <div id="out-latch" class="output-bulb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Flip-Flop SR con Reloj</h2>
+            <p>Igual que el Latch, pero solo acepta cambios cuando el Reloj (CLK) está activo.</p>
+            <p>Evita cambios indeseados por ruido eléctrico mientras el reloj está inactivo.</p>
+            <p style="color: #ff004c">⚠️ Estado Prohibido: S=1 y R=1 (Inestable)</p>
+        </div>
+
+        <div class="slide">
+            <h2>Flip-Flop tipo D (Data)</h2>
+            <p>Resuelve el estado prohibido del SR. Tiene una sola entrada de datos.</p>
+            <p>Copia el valor de <strong>D</strong> a la salida <strong>Q</strong> cuando el reloj se activa.</p>
+            <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" id="btn-d-data" onclick="toggleBtnState(this)">D=0</button>
+                        <button class="input-btn" style="border-color:cyan; color:cyan;" onclick="triggerClock('d')">CLK ⬆</button>
+                    </div>
+                    <div style="width:100px; height:80px; border:2px solid white; display:flex; align-items:center; justify-content:center;">FF-D</div>
+                    <div id="out-d" class="output-bulb"></div>
+                </div>
+                <p><small>Configura D y pulsa CLK para guardar el dato.</small></p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Flip-Flop JK</h2>
+            <p>El más versátil. Mejora el SR interpretando el estado "1-1".</p>
+            <ul>
+                <li>J=1, K=0: Set</li>
+                <li>J=0, K=1: Reset</li>
+                <li>J=1, K=1: <strong>Toggle</strong> (Invierte el estado actual)</li>
+            </ul>
+             <div class="interactive-area">
+                <div class="circuit-container">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="input-btn off" id="btn-j" onclick="toggleBtnState(this)">J=0</button>
+                        <button class="input-btn off" id="btn-k" onclick="toggleBtnState(this)">K=0</button>
+                        <button class="input-btn" style="border-color:cyan; color:cyan;" onclick="triggerClock('jk')">CLK ⬆</button>
+                    </div>
+                    <div style="width:100px; height:80px; border:2px solid white; display:flex; align-items:center; justify-content:center;">FF-JK</div>
+                    <div id="out-jk" class="output-bulb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Flip-Flop T (Toggle)</h2>
+            <p>Versión simplificada del JK (conectando J y K juntos).</p>
+            <p>Si T=1, la salida cambia (se invierte) con cada pulso de reloj.</p>
+            <p>Si T=0, mantiene el estado (Hold).</p>
+            <p><em>Muy usado en contadores digitales.</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>¿Para qué sirve todo esto?</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                <div>
+                    <strong>Compuertas:</strong><br>
+                    - Procesadores (ALU)<br>
+                    - Cifrado de datos<br>
+                    - Toma de decisiones
+                </div>
+                <div>
+                    <strong>Flip-Flops:</strong><br>
+                    - Memoria RAM<br>
+                    - Registros de CPU<br>
+                    - Contadores
+                </div>
+            </div>
+            <div style="margin-top:20px; font-size: 3rem;">💻 + 📱 + 🤖</div>
+        </div>
+
+        <div class="slide">
+            <h1>¡Gracias!</h1>
+            <h2>Lógica Digital Dominada</h2>
+            <p>Ahora conoces los bloques fundamentales de la tecnología moderna.</p>
+            <button class="nav-btn" onclick="goToSlide(0)">Volver al Inicio ↺</button>
+        </div>
+
+        <div class="progress"></div>
+        <div class="slide-number"></div>
+    </div>
+
+    <div class="controls">
+        <button class="nav-btn" id="prevBtn" onclick="prevSlide()">❮ Anterior</button>
+        <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Siguiente ❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.querySelector('.progress');
+        const numberDisplay = document.querySelector('.slide-number');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+            
+            // Update UI
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === slides.length - 1;
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            numberDisplay.textContent = `${currentSlide + 1} / ${slides.length}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function goToSlide(n) {
+            currentSlide = n;
+            updateSlide();
+        }
+
+        // --- Lógica de Interacción ---
+
+        // Función genérica para cambiar estado visual de botón
+        function toggleBtnState(btn) {
+            if (btn.classList.contains('off')) {
+                btn.classList.remove('off');
+                btn.classList.add('on');
+                btn.textContent = btn.textContent.replace('0', '1');
+                return 1;
+            } else {
+                btn.classList.remove('on');
+                btn.classList.add('off');
+                btn.textContent = btn.textContent.replace('1', '0');
+                return 0;
+            }
+        }
+
+        // Lógica de Compuertas
+        function toggleInput(btn, type) {
+            toggleBtnState(btn);
+            
+            // Buscar contenedor padre para encontrar los inputs hermanos
+            const container = btn.closest('.circuit-container');
+            const inputs = container.querySelectorAll('.input-btn');
+            const outputEl = container.querySelector('.output-bulb');
+            
+            // Obtener valores
+            const val1 = inputs[0].classList.contains('on') ? 1 : 0;
+            const val2 = inputs[1] ? (inputs[1].classList.contains('on') ? 1 : 0) : 0;
+            
+            let result = 0;
+
+            switch(type) {
+                case 'not': result = !val1; break;
+                case 'and': result = val1 && val2; break;
+                case 'or': result = val1 || val2; break;
+                case 'nand': result = !(val1 && val2); break;
+                case 'nor': result = !(val1 || val2); break;
+                case 'xor': result = val1 !== val2; break;
+                case 'xnor': result = val1 === val2; break;
+            }
+
+            if (result) {
+                outputEl.classList.add('active');
+            } else {
+                outputEl.classList.remove('active');
+            }
+        }
+
+        // Lógica Latch SR (Simple)
+        let latchState = 0;
+        function toggleLatch(btn, type) {
+            const val = toggleBtnState(btn); // 1 o 0
+            const container = btn.closest('.circuit-container');
+            const outputEl = container.querySelector('#out-latch');
+            
+            // Obtener estado de los botones S y R
+            const btns = container.querySelectorAll('.input-btn');
+            // Asumimos orden DOM: S es [0], R es [1]
+            const s = btns[0].classList.contains('on');
+            const r = btns[1].classList.contains('on');
+
+            if (s && !r) latchState = 1;
+            else if (!s && r) latchState = 0;
+            else if (s && r) latchState = 0; // Estado inválido, forzamos 0 visualmente
+
+            if (latchState) outputEl.classList.add('active');
+            else outputEl.classList.remove('active');
+        }
+
+        // Lógica Flip Flops (Clocked)
+        let dState = 0;
+        let jkState = 0;
+
+        function triggerClock(type) {
+            if (type === 'd') {
+                const btnD = document.getElementById('btn-d-data');
+                const output = document.getElementById('out-d');
+                const val = btnD.classList.contains('on') ? 1 : 0;
+                dState = val; // D Flip Flop copia la entrada
+                
+                if (dState) output.classList.add('active');
+                else output.classList.remove('active');
+            }
+            
+            if (type === 'jk') {
+                const btnJ = document.getElementById('btn-j');
+                const btnK = document.getElementById('btn-k');
+                const output = document.getElementById('out-jk');
+                
+                const j = btnJ.classList.contains('on');
+                const k = btnK.classList.contains('on');
+
+                if (j && !k) jkState = 1;       // Set
+                else if (!j && k) jkState = 0;  // Reset
+                else if (j && k) jkState = !jkState; // Toggle
+                // Si j=0 y k=0, mantiene estado (no hace nada)
+
+                if (jkState) output.classList.add('active');
+                else output.classList.remove('active');
+            }
+        }
+
+        // Inicializar
+        updateSlide();
+        
+        // Soporte teclado
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight') nextSlide();
+            if(e.key === 'ArrowLeft') prevSlide();
+        });
+
+    </script>
+</body>
+</html>
