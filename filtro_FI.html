@@ -3,135 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diseño de Filtros RC para Frecuencia Intermedia FM</title>
+    <title>Diseño de Filtros RC para FM</title>
     <style>
         :root {
-            --bg-color: #1a1a1a;
-            --text-color: #f0f0f0;
-            --accent-color: #00d4ff;
-            --secondary-color: #ff0055;
-            --slide-bg: #252525;
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --accent-color: #00e5ff;
+            --secondary-color: #ff4081;
+            --slide-bg: #1e1e1e;
             --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            background-color: var(--bg-color); color: var(--text-color);
             font-family: var(--font-main);
         }
 
         #presentation-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 100vw; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
             position: relative;
         }
 
         .slide {
-            position: absolute;
-            width: 90%;
-            max-width: 1200px;
-            height: 90%;
-            background-color: var(--slide-bg);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            padding: 2rem;
-            box-sizing: border-box;
-            opacity: 0;
-            transform: scale(0.95);
-            transition: all 0.5s ease-in-out;
-            pointer-events: none;
-            z-index: 1;
+            position: absolute; width: 90%; max-width: 1200px; height: 90%;
+            background-color: var(--slide-bg); border-radius: 12px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; padding: 2.5rem;
+            box-sizing: border-box; opacity: 0; transform: scale(0.98);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none; z-index: 1;
         }
 
-        .slide.active {
-            opacity: 1;
-            transform: scale(1);
-            pointer-events: all;
-            z-index: 10;
-        }
+        .slide.active { opacity: 1; transform: scale(1); pointer-events: all; z-index: 10; }
 
-        h1 { color: var(--accent-color); margin-top: 0; font-size: 2.5rem; }
+        h1 { color: var(--accent-color); margin: 0 0 20px 0; font-size: 2.2rem; border-bottom: 1px solid #333; padding-bottom: 15px;}
         
-        /* Math Formatting Styles */
-        .math-block { font-size: 1.8rem; margin: 20px 0; font-family: 'Times New Roman', serif; font-style: italic; }
-        .fraction { display: inline-block; vertical-align: middle; text-align: center; margin: 0 5px; }
-        .numerator { border-bottom: 2px solid var(--text-color); display: block; padding: 0 5px; }
-        .denominator { display: block; padding: 0 5px; }
-        .sub { font-size: 0.7em; vertical-align: sub; }
-        .sup { font-size: 0.7em; vertical-align: super; }
+        /* Math Styles */
+        .math-block { font-size: 1.6rem; margin: 15px 0; font-family: 'Times New Roman', serif; font-style: italic; color: #fff; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; }
+        .fraction { display: inline-block; vertical-align: middle; text-align: center; margin: 0 4px; }
+        .numerator { border-bottom: 2px solid var(--text-color); display: block; padding: 0 2px; }
+        .denominator { display: block; padding: 0 2px; }
 
-        .content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            gap: 2rem;
-            overflow-y: auto;
-        }
-
-        .text-panel { flex: 1; font-size: 1.6rem; line-height: 1.6; }
-        .visual-panel { flex: 1; display: flex; justify-content: center; align-items: center; height: 100%; }
+        .content { flex-grow: 1; display: flex; align-items: center; justify-content: space-between; gap: 3rem; overflow-y: auto; }
+        .text-panel { flex: 1; font-size: 1.4rem; line-height: 1.5; }
+        .visual-panel { flex: 1; display: flex; justify-content: center; align-items: center; height: 100%; min-height: 300px; }
         
-        svg { width: 100%; height: 100%; max-height: 450px; }
-        .circuit-line { stroke: var(--text-color); stroke-width: 3; fill: none; }
+        svg { width: 100%; height: 100%; max-height: 400px; filter: drop-shadow(0px 0px 5px rgba(0,229,255,0.2)); }
+        .circuit-line { stroke: var(--text-color); stroke-width: 3; fill: none; stroke-linecap: round; }
         .component { fill: none; stroke: var(--accent-color); stroke-width: 3; }
         .label { fill: var(--text-color); font-size: 16px; font-family: monospace; }
+        
+        /* Interactive Elements */
+        .controls { position: absolute; bottom: 25px; right: 30px; z-index: 100; display: flex; gap: 15px; }
+        button { background-color: var(--accent-color); border: none; padding: 10px 25px; font-size: 1rem; cursor: pointer; border-radius: 4px; color: #000; font-weight: bold; transition: transform 0.1s; }
+        button:active { transform: scale(0.95); }
+        
+        .progress-bar { position: absolute; bottom: 0; left: 0; height: 5px; background-color: var(--accent-color); transition: width 0.3s ease; }
+        .slide-number { position: absolute; bottom: 25px; left: 30px; color: #777; font-size: 1.1rem; font-family: monospace; }
 
-        /* Controls */
-        .controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            background-color: var(--accent-color);
-            border: none;
-            padding: 12px 24px;
-            font-size: 1rem;
-            cursor: pointer;
-            border-radius: 5px;
-            color: #000;
-            font-weight: bold;
-        }
-        button:hover { background-color: #fff; }
-
-        .progress-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 6px;
-            background-color: var(--accent-color);
-            transition: width 0.3s;
-        }
-
-        .slide-number {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: #666;
-            font-size: 1.2rem;
-        }
-
-        @media (max-width: 768px) {
+        @media (max-width: 800px) {
             .content { flex-direction: column; }
-            .text-panel { font-size: 1.1rem; }
-            h1 { font-size: 1.8rem; }
-            .math-block { font-size: 1.4rem; }
+            .text-panel { font-size: 1.1rem; order: 2; }
+            .visual-panel { order: 1; max-height: 250px; width: 100%; }
+            h1 { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -140,7 +76,6 @@
 <div id="presentation-container">
     <div class="progress-bar" id="progress"></div>
     <div class="slide-number" id="slide-number">1 / 20</div>
-    
     <div class="controls">
         <button onclick="prevSlide()">❮ Anterior</button>
         <button onclick="nextSlide()">Siguiente ❯</button>
@@ -148,121 +83,109 @@
 </div>
 
 <script>
-    // Helper para crear fracciones HTML
-    const frac = (num, den) => `<span class="fraction"><span class="numerator">${num}</span><span class="denominator">${den}</span></span>`;
+    // Utilidad para fracciones
+    const frac = (n, d) => `<span class="fraction"><span class="numerator">${n}</span><span class="denominator">${d}</span></span>`;
 
     const slidesData = [
         {
+            type: "intro",
             title: "Filtros RC para Frecuencia Intermedia (FM)",
-            content: "<ul><li>Objetivo: Aislar 10.7 MHz</li><li>Método: Cálculo de circuitos RC</li><li>Aplicación: Receptores de Radio FM</li></ul><p>Pulsa siguiente para comenzar.</p>",
-            type: "intro"
+            content: "<ul><li><strong>Objetivo:</strong> Aislar 10.7 MHz</li><li><strong>Método:</strong> Circuitos RC simples</li><li><strong>Contexto:</strong> Radio Superheterodina</li></ul>"
         },
         {
-            title: "¿Qué es la Frecuencia Intermedia (IF)?",
-            content: "En la radio superheterodina, la señal de RF se mezcla para bajar a una frecuencia fija estándar. En FM comercial, esta es <strong>10.7 MHz</strong>.",
-            type: "diagram_block"
+            type: "diagram_block",
+            title: "¿Qué es la Frecuencia Intermedia?",
+            content: "La señal de la antena varía, pero el circuito interno trabaja mejor a una frecuencia fija: <strong>10.7 MHz</strong> en FM."
         },
         {
-            title: "El Desafío del Filtrado",
-            content: "Necesitamos atenuar frecuencias bajas (audio/ruido) y muy altas (armónicos), dejando pasar solo los 10.7 MHz. <br><br><strong>Solución:</strong> Filtros Pasa-Banda (Combinación de Pasa-Bajos y Pasa-Altos).",
-            type: "spectrum"
+            type: "spectrum",
+            title: "El Espectro de Frecuencia",
+            content: "El filtro debe rechazar el ruido de baja frecuencia y las interferencias de alta frecuencia (armónicos)."
         },
         {
-            title: "Concepto: Filtro RC Pasa-Bajos",
-            content: "Permite el paso de frecuencias inferiores a la de corte (f<sub>c</sub>) y atenúa las superiores.<br><br><strong>Configuración:</strong> Resistencia en serie, Condensador a tierra.",
-            type: "circuit_lpf"
+            type: "circuit_lpf",
+            title: "1. Filtro Pasa-Bajos (LPF)",
+            content: "Deja pasar frecuencias bajas, bloquea las altas.<br>Esquema: <strong>Resistencia en serie, Condensador a tierra</strong>."
         },
         {
-            title: "Fórmula de Frecuencia de Corte",
-            content: `La piedra angular del diseño RC:<br><br>
-                      <div class="math-block">f<sub>c</sub> = ${frac('1', '2&pi; R C')}</div>
-                      <br>Donde:<br>R = Resistencia (Ohms)<br>C = Capacitancia (Farads)`,
-            type: "formula_viz" 
+            type: "formula_viz",
+            title: "La Fórmula Maestra",
+            content: `Frecuencia de corte (-3dB):<br><div class="math-block">f<sub>c</sub> = ${frac('1', '2&pi; R C')}</div>`
         },
         {
-            title: "Objetivo: Pasa-Bajos a 10.7 MHz",
-            content: "Queremos que f<sub>c</sub> &approx; 10.7 MHz.<br>Esto asegurará que el ruido de alta frecuencia sea atenuado, aunque un RC de primer orden tiene una pendiente suave (6dB/octava).",
-            type: "target_viz"
+            type: "target_viz",
+            title: "Diseñando el LPF",
+            content: "Objetivo: f<sub>c</sub> &approx; 10.7 MHz.<br>Esto limpiará el ruido por encima de nuestra señal."
         },
         {
-            title: "Paso 1: Elegir un componente fijo",
-            content: "En RF (Radiofrecuencia), es común fijar la impedancia (R) o el capacitor (C) a valores comerciales.<br>Intentaremos fijar <strong>R = 150 &Omega;</strong> (Impedancia baja para minimizar ruido).",
-            type: "table_resistors"
+            type: "table_resistors",
+            title: "Paso 1: Fijar R",
+            content: "Elegimos un valor comercial bajo para reducir ruido térmico.<br><strong>R = 150 &Omega;</strong> (Serie E12)."
         },
         {
+            type: "calc_step1",
             title: "Paso 2: Despejar C",
-            content: `Reorganizamos la fórmula:<br>
-                      <div class="math-block">C = ${frac('1', '2&pi; R f<sub>c</sub>')}</div><br>
-                      Sustituimos:<br>
-                      <div class="math-block">C = ${frac('1', '2&pi; (150)(10.7 &times; 10<sup>6</sup>)')}</div>`,
-            type: "calc_step1"
+            content: `Intercambiamos f<sub>c</sub> y C en la fórmula:<br><div class="math-block">C = ${frac('1', '2&pi; R f<sub>c</sub>')}</div>`
         },
         {
+            type: "calc_result_1",
             title: "Cálculo Numérico (LPF)",
-            content: `Calculamos el denominador:<br>
-                      2 &times; &pi; &times; 150 &times; 10.7M &approx; 10.08 x 10<sup>9</sup><br><br>
-                      Resultado:<br>
-                      <div class="math-block">C &approx; 99.16 &times; 10<sup>-12</sup> F</div>
-                      (99.16 picoFaradios)`,
-            type: "calc_result_1"
+            content: `Sustituyendo:<br><div class="math-block">C = ${frac('1', '2&pi; (150)(10.7e6)')}</div>Resultado teórico: <strong>99.16 pF</strong>`
         },
         {
-            title: "Selección de Componente Comercial",
-            content: "El valor calculado es <strong>99.16 pF</strong>.<br><br>Valor comercial más cercano: <strong>100 pF</strong>.<br><br>Recalculando f<sub>c</sub> real: 10.61 MHz (Aceptable).",
-            type: "component_img_c"
+            type: "component_img_c",
+            title: "Componente Real",
+            content: "Valor comercial más cercano: <strong>100 pF</strong> (código 101).<br>Error < 1% respecto al cálculo."
         },
         {
-            title: "Concepto: Filtro RC Pasa-Altos",
-            content: "Bloquea DC y frecuencias bajas, deja pasar 10.7 MHz.<br><br><strong>Configuración:</strong> Condensador en serie, Resistencia a tierra.",
-            type: "circuit_hpf"
+            type: "circuit_hpf",
+            title: "2. Filtro Pasa-Altos (HPF)",
+            content: "Bloquea DC y frecuencias bajas.<br>Esquema: <strong>Condensador en serie, Resistencia a tierra</strong>."
         },
         {
-            title: "Cálculo Pasa-Altos (HPF)",
-            content: "Usamos la misma frecuencia de corte objetivo: 10.7 MHz.<br>Para variar, fijaremos <strong>C = 47 pF</strong> (Valor estándar RF).",
-            type: "calc_step2"
+            type: "calc_step2",
+            title: "Estrategia para HPF",
+            content: "Ahora fijamos C a un valor estándar de RF: <strong>47 pF</strong>.<br>Debemos calcular qué Resistencia necesitamos."
         },
         {
+            type: "formula_r",
             title: "Despejando R",
-            content: `<div class="math-block">R = ${frac('1', '2&pi; C f<sub>c</sub>')}</div><br>
-                      <div class="math-block">R = ${frac('1', '2&pi; (47 &times; 10<sup>-12</sup>)(10.7 &times; 10<sup>6</sup>)')}</div>`,
-            type: "formula_r"
+            content: `<div class="math-block">R = ${frac('1', '2&pi; C f<sub>c</sub>')}</div><br>Sustituyendo C = 47pF, f<sub>c</sub> = 10.7MHz.`
         },
         {
-            title: "Resultado Numérico (HPF)",
-            content: `Denominador &approx; 0.00316<br><br>
-                      <div class="math-block">R &approx; 316.4 &Omega;</div><br>
-                      Valor comercial cercano (E12): <strong>330 &Omega;</strong>.`,
-            type: "resistor_select"
+            type: "resistor_select",
+            title: "Resultado HPF",
+            content: `R calculado: <strong>316.4 &Omega;</strong><br>Valor comercial (E12): <strong>330 &Omega;</strong>.<br>f<sub>c</sub> real: ~10.2 MHz.`
         },
         {
-            title: "Estructura Pasa-Banda",
-            content: "Conectando el HPF y el LPF en cascada creamos un filtro pasa-banda rudimentario centrado cerca de 10.7 MHz.",
-            type: "circuit_bandpass"
+            type: "circuit_bandpass",
+            title: "El Filtro Pasa-Banda",
+            content: "Al unir HPF + LPF obtenemos una 'ventana' que deja pasar solo el centro (10.7 MHz)."
         },
         {
-            title: "Simulación: Diagrama de Bode",
-            content: "Vemos cómo la señal es máxima alrededor de 10.7 MHz y cae hacia los lados.<br>Nota: Un filtro RC simple tiene un factor Q bajo (es muy ancho).",
-            type: "bode_plot"
+            type: "bode_plot",
+            title: "Respuesta en Frecuencia",
+            content: "Gráfica de Bode: La señal es máxima en el centro y se atenúa hacia los extremos."
         },
         {
-            title: "Consideraciones de RF: Parásitos",
-            content: "A 10.7 MHz, las patas de los componentes tienen inductancia.<br>Un resistor no es solo resistencia, es también un pequeño inductor.",
-            type: "parasitic_viz"
+            type: "parasitic_viz",
+            title: "Mundo Real: Parásitos",
+            content: "A 10.7 MHz nada es ideal. Las resistencias tienen inductancia y los condensadores tienen resistencia serie (ESR)."
         },
         {
-            title: "Impedancia de Entrada/Salida",
-            content: "El filtro LPF de 150&Omega; presenta una carga diferente que el HPF de 330&Omega;. <br>Esto es crucial para acoplar etapas de amplificación.",
-            type: "impedance_viz"
+            type: "impedance_viz",
+            title: "Acople de Impedancias",
+            content: "La salida del filtro debe coincidir con la entrada de la siguiente etapa (Amplificador) para evitar pérdidas por reflejo."
         },
         {
-            title: "Limitaciones y Realidad",
-            content: "Para radio FM de alta calidad, los filtros RC suelen ser insuficientes para la selectividad.<br>Se usan filtros <strong>Cerámicos</strong> o <strong>LC (Tanque)</strong>.",
-            type: "comparison_table"
+            type: "comparison_table",
+            title: "¿Es suficiente RC?",
+            content: "Para alta fidelidad, RC es muy 'ancho'. Se prefieren filtros Cerámicos o LC (Tanque) para mayor selectividad."
         },
         {
-            title: "Resumen Final",
-            content: "<strong>Filtro LPF:</strong> R=150&Omega;, C=100pF<br><strong>Filtro HPF:</strong> C=47pF, R=330&Omega;<br><strong>Frecuencia:</strong> ~10.7 MHz<br><br>Base teórica para entender el filtrado RF.",
-            type: "summary_check"
+            type: "summary_check",
+            title: "Resumen del Diseño",
+            content: "LPF: 150&Omega; / 100pF<br>HPF: 330&Omega; / 47pF<br>Frecuencia Central: ~10.5 MHz (Aceptable)."
         }
     ];
 
@@ -271,132 +194,161 @@
     const slideNumberDisplay = document.getElementById('slide-number');
     let currentSlide = 0;
 
+    // --- GENERADOR DE SVG ---
     function getSvgContent(type) {
-        const width = 400;
-        const height = 300;
-        let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+        const w = 400; const h = 300;
+        let s = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
         
         switch(type) {
             case 'intro':
-                svg += `<circle cx="200" cy="150" r="40" fill="none" stroke="#00d4ff" stroke-width="4">
-                        <animate attributeName="r" from="40" to="100" dur="1.5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" from="1" to="0" dur="1.5s" repeatCount="indefinite" />
-                        </circle>
-                        <text x="200" y="155" text-anchor="middle" fill="#fff" font-size="24" font-weight="bold">FM 10.7</text>`;
+                s += `<circle cx="200" cy="150" r="50" fill="none" stroke="#00e5ff" stroke-width="4">
+                        <animate attributeName="r" from="50" to="120" dur="2s" repeatCount="indefinite" opacity="0"/>
+                        <animate attributeName="opacity" values="1;0" dur="2s" repeatCount="indefinite"/>
+                      </circle>
+                      <text x="200" y="155" text-anchor="middle" fill="#fff" font-size="28" font-weight="bold">FM</text>
+                      <text x="200" y="185" text-anchor="middle" fill="#00e5ff" font-size="14">10.7 MHz</text>`;
                 break;
             case 'diagram_block':
-                svg += `<rect x="10" y="100" width="80" height="60" fill="none" stroke="#00d4ff" stroke-width="2"/>
-                        <text x="50" y="135" text-anchor="middle" fill="#fff" font-size="12">Antena</text>
-                        <line x1="90" y1="130" x2="130" y2="130" stroke="#fff" stroke-width="2"/>
-                        <rect x="130" y="100" width="80" height="60" fill="none" stroke="#00d4ff" stroke-width="2"/>
-                        <text x="170" y="135" text-anchor="middle" fill="#fff" font-size="12">Mixer</text>
-                        <line x1="210" y1="130" x2="250" y2="130" stroke="#fff" stroke-width="2"/>
-                        <rect x="250" y="100" width="80" height="60" fill="none" stroke="#ff0055" stroke-width="3"/>
-                        <text x="290" y="135" text-anchor="middle" fill="#fff" font-size="12">IF Filter</text>`;
+                s += `<rect x="20" y="120" width="80" height="60" stroke="#00e5ff" fill="none" stroke-width="2"/><text x="60" y="155" fill="#fff" text-anchor="middle" font-size="12">RF</text>
+                      <line x1="100" y1="150" x2="140" y2="150" stroke="#fff" stroke-width="2"/>
+                      <circle cx="160" cy="150" r="20" stroke="#ff4081" fill="none" stroke-width="2"/><text x="160" y="155" fill="#fff" text-anchor="middle">X</text>
+                      <line x1="180" y1="150" x2="220" y2="150" stroke="#fff" stroke-width="2"/>
+                      <rect x="220" y="120" width="80" height="60" stroke="#00e5ff" fill="#222" stroke-width="2"/><text x="260" y="155" fill="#00e5ff" text-anchor="middle" font-weight="bold">IF</text>`;
                 break;
             case 'spectrum':
-                svg += `<line x1="20" y1="250" x2="380" y2="250" stroke="#fff" stroke-width="2"/> <path d="M 20 240 Q 150 240 180 50 L 220 50 Q 250 240 380 240" fill="none" stroke="#00d4ff" stroke-width="3"/>
-                        <text x="200" y="270" text-anchor="middle" fill="#fff">10.7 MHz</text>
-                        <text x="50" y="270" text-anchor="middle" fill="#aaa">Audio</text>
-                        <text x="350" y="270" text-anchor="middle" fill="#aaa">RF</text>`;
+                s += `<line x1="20" y1="260" x2="380" y2="260" stroke="#666" stroke-width="2"/>
+                      <path d="M 20 250 Q 100 250 150 250 L 180 50 L 220 50 L 250 250 Q 300 250 380 250" fill="rgba(0,229,255,0.2)" stroke="#00e5ff" stroke-width="2"/>
+                      <line x1="200" y1="260" x2="200" y2="50" stroke="#ff4081" stroke-dasharray="4"/>
+                      <text x="200" y="280" text-anchor="middle" fill="#aaa">10.7 MHz</text>`;
                 break;
             case 'circuit_lpf':
-                svg += `<line x1="50" y1="100" x2="150" y2="100" class="circuit-line"/>
-                        <rect x="150" y="90" width="60" height="20" class="component"/> <text x="180" y="80" text-anchor="middle" class="label">R</text>
-                        <line x1="210" y1="100" x2="350" y2="100" class="circuit-line"/>
-                        <line x1="280" y1="100" x2="280" y2="150" class="circuit-line"/>
-                        <line x1="260" y1="150" x2="300" y2="150" class="component"/>
-                        <line x1="260" y1="160" x2="300" y2="160" class="component"/>
-                        <line x1="280" y1="160" x2="280" y2="200" class="circuit-line"/>
-                        <line x1="260" y1="200" x2="300" y2="200" class="circuit-line"/> <text x="310" y="155" class="label">C</text>
-                        <circle cx="350" cy="100" r="4" fill="#fff"/>`;
-                break;
-            case 'circuit_hpf':
-                svg += `<line x1="50" y1="100" x2="140" y2="100" class="circuit-line"/>
-                        <line x1="140" y1="80" x2="140" y2="120" class="component"/>
-                        <line x1="150" y1="80" x2="150" y2="120" class="component"/>
-                        <text x="145" y="70" text-anchor="middle" class="label">C</text>
-                        <line x1="150" y1="100" x2="350" y2="100" class="circuit-line"/>
-                        <line x1="250" y1="100" x2="250" y2="140" class="circuit-line"/>
-                        <rect x="240" y="140" width="20" height="60" class="component"/>
-                        <text x="280" y="170" class="label">R</text>
-                        <line x1="250" y1="200" x2="250" y2="220" class="circuit-line"/>
-                        <line x1="230" y1="220" x2="270" y2="220" class="circuit-line"/>`;
+                s += `<line x1="50" y1="100" x2="150" y2="100" class="circuit-line"/>
+                      <rect x="150" y="90" width="60" height="20" class="component"/>
+                      <text x="180" y="80" text-anchor="middle" class="label">R</text>
+                      <line x1="210" y1="100" x2="350" y2="100" class="circuit-line"/>
+                      <line x1="280" y1="100" x2="280" y2="140" class="circuit-line"/>
+                      <line x1="260" y1="140" x2="300" y2="140" class="component"/>
+                      <line x1="260" y1="150" x2="300" y2="150" class="component"/>
+                      <line x1="280" y1="150" x2="280" y2="180" class="circuit-line"/>
+                      <text x="310" y="150" class="label">C</text>
+                      <text x="350" y="90" class="label">Vout</text>`;
                 break;
             case 'formula_viz':
-                // Visual representation of R and C relating to time/freq
-                svg += `<circle cx="200" cy="150" r="100" fill="none" stroke="#333" stroke-width="2"/>
-                        <path d="M 200 150 L 270 80" stroke="#00d4ff" stroke-width="3"/>
-                        <text x="240" y="110" fill="#00d4ff" font-size="14">Frecuencia</text>
-                        <text x="200" y="280" text-anchor="middle" fill="#fff">R &times; C = Tiempo</text>
-                        <text x="200" y="40" text-anchor="middle" fill="#fff">1 / Tiempo = Frecuencia</text>`;
+                s += `<rect x="50" y="50" width="300" height="200" rx="10" fill="#222" stroke="#444"/>
+                      <text x="200" y="100" text-anchor="middle" fill="#fff" font-size="18">R &times; C = &tau; (Tau)</text>
+                      <text x="200" y="140" text-anchor="middle" fill="#aaa" font-size="14">Constante de tiempo</text>
+                      <line x1="100" y1="160" x2="300" y2="160" stroke="#ff4081" stroke-width="2"/>
+                      <text x="200" y="200" text-anchor="middle" fill="#00e5ff" font-size="18">f = 1 / (2&pi;&tau;)</text>`;
                 break;
             case 'target_viz':
-                svg += `<line x1="50" y1="250" x2="350" y2="250" stroke="#fff"/>
-                        <line x1="200" y1="250" x2="200" y2="50" stroke="#ff0055" stroke-dasharray="5"/>
-                        <text x="200" y="270" text-anchor="middle" fill="#ff0055">10.7 MHz</text>
-                        <path d="M 50 100 Q 150 100 200 175 Q 250 250 350 250" fill="none" stroke="#00d4ff" stroke-width="3"/>`;
+                s += `<line x1="50" y1="150" x2="350" y2="150" stroke="#666"/>
+                      <path d="M 50 150 Q 150 150 200 50 Q 250 150 350 150" fill="none" stroke="#666" stroke-dasharray="4"/>
+                      <circle cx="200" cy="50" r="5" fill="#ff4081"/>
+                      <text x="200" y="30" text-anchor="middle" fill="#ff4081">10.7 MHz</text>
+                      <text x="200" y="250" text-anchor="middle" fill="#00e5ff">Objetivo de Diseño</text>`;
                 break;
             case 'table_resistors':
-                svg = `<foreignObject width="100%" height="100%">
-                        <div xmlns="http://www.w3.org/1999/xhtml" style="color:white; display:flex; justify-content:center; align-items:center; height:100%;">
-                            <table style="font-size:16px; width:80%;">
-                                <tr><th>Serie E12</th><th>Valores (&Omega;)</th></tr>
-                                <tr><td>Baja</td><td>10, 100, <span style="color:#00d4ff; font-weight:bold;">150</span>, 220</td></tr>
-                                <tr><td>Media</td><td>330, 470, 1k, 10k</td></tr>
-                            </table>
-                        </div>
-                       </foreignObject>`;
+                s += `<foreignObject width="100%" height="100%"><div style="color:#fff; display:flex; justify-content:center; align-items:center; height:100%;">
+                      <table style="border:1px solid #444; width:80%;">
+                        <tr style="background:#333;"><th>Serie</th><th>Valores (&Omega;)</th></tr>
+                        <tr><td>E12</td><td>100, 120, <strong style="color:#00e5ff; font-size:1.2em">150</strong>, 180</td></tr>
+                        <tr><td>E12</td><td>220, 270, 330, 390</td></tr>
+                      </table></div></foreignObject>`;
+                break;
+            case 'calc_step1':
+                // Visual de despeje
+                s += `<text x="200" y="100" text-anchor="middle" fill="#aaa" font-size="20">f = 1 / (2&pi;RC)</text>
+                      <path d="M 180 110 L 180 160 L 220 160 L 220 110" fill="none" stroke="#ff4081" stroke-width="2" marker-end="url(#arrow)"/>
+                      <text x="200" y="200" text-anchor="middle" fill="#fff" font-size="24" font-weight="bold">C = 1 / (2&pi;Rf)</text>`;
+                break;
+            case 'calc_result_1':
+                 s += `<rect x="80" y="100" width="240" height="100" rx="10" fill="#000" stroke="#00e5ff"/>
+                       <text x="200" y="140" text-anchor="middle" fill="#00ff00" font-family="monospace" font-size="22">99.16e-12</text>
+                       <text x="200" y="170" text-anchor="middle" fill="#00ff00" font-family="monospace" font-size="16">F A R A D S</text>`;
                 break;
             case 'component_img_c':
-                svg += `<circle cx="200" cy="150" r="80" fill="#C45A28" stroke="#8B4513" stroke-width="4"/>
-                        <text x="200" y="140" text-anchor="middle" fill="#000" font-size="20" font-weight="bold">101</text>
-                        <text x="200" y="165" text-anchor="middle" fill="#000" font-size="14">(100 pF)</text>
-                        <line x1="200" y1="230" x2="200" y2="280" stroke="#aaa" stroke-width="4"/>
-                        <line x1="200" y1="70" x2="200" y2="20" stroke="#aaa" stroke-width="4"/>`;
+                s += `<circle cx="200" cy="150" r="70" fill="#D2691E" stroke="#8B4513" stroke-width="3"/>
+                      <text x="200" y="140" text-anchor="middle" fill="#000" font-weight="bold" font-size="22">101</text>
+                      <text x="200" y="165" text-anchor="middle" fill="#000" font-size="12">50V</text>
+                      <line x1="200" y1="220" x2="200" y2="280" stroke="#bbb" stroke-width="4"/>
+                      <line x1="200" y1="80" x2="200" y2="20" stroke="#bbb" stroke-width="4"/>`;
+                break;
+            case 'circuit_hpf':
+                s += `<line x1="50" y1="100" x2="140" y2="100" class="circuit-line"/>
+                      <line x1="140" y1="80" x2="140" y2="120" class="component"/>
+                      <line x1="150" y1="80" x2="150" y2="120" class="component"/>
+                      <text x="145" y="70" text-anchor="middle" class="label">C</text>
+                      <line x1="150" y1="100" x2="350" y2="100" class="circuit-line"/>
+                      <line x1="250" y1="100" x2="250" y2="140" class="circuit-line"/>
+                      <rect x="240" y="140" width="20" height="60" class="component"/>
+                      <text x="280" y="170" class="label">R</text>
+                      <line x1="250" y1="200" x2="250" y2="230" class="circuit-line"/>`;
+                break;
+            case 'calc_step2':
+                s += `<text x="200" y="80" text-anchor="middle" fill="#fff" font-size="18">C Fijo = 47 pF</text>
+                      <circle cx="200" cy="150" r="40" fill="none" stroke="#00e5ff" stroke-width="2"/>
+                      <text x="200" y="155" text-anchor="middle" fill="#00e5ff" font-size="24">?</text>
+                      <text x="200" y="220" text-anchor="middle" fill="#fff">Calcular R</text>`;
+                break;
+            case 'formula_r':
+                 s += `<rect x="50" y="80" width="300" height="140" fill="#222" stroke="#ff4081"/>
+                       <text x="200" y="155" text-anchor="middle" fill="#fff" font-size="24">R = 1 / ( &omega; C )</text>`;
                 break;
             case 'resistor_select':
-                 svg += `<rect x="100" y="120" width="200" height="60" rx="10" fill="#e0cda8"/>
-                         <rect x="130" y="120" width="20" height="60" fill="orange"/> <rect x="170" y="120" width="20" height="60" fill="orange"/> <rect x="210" y="120" width="20" height="60" fill="brown"/>  <rect x="260" y="120" width="20" height="60" fill="gold"/>   <text x="200" y="220" text-anchor="middle" fill="#fff" font-size="18">Código de Colores: 330&Omega;</text>`;
+                s += `<rect x="100" y="130" width="200" height="40" fill="#e0cda8" rx="5"/>
+                      <rect x="130" y="130" width="15" height="40" fill="#FFA500"/> <rect x="160" y="130" width="15" height="40" fill="#FFA500"/> <rect x="190" y="130" width="15" height="40" fill="#A52A2A"/> <text x="200" y="220" text-anchor="middle" fill="#fff" font-size="18">330 &Omega;</text>`;
                 break;
             case 'circuit_bandpass':
-                svg += `<rect x="50" y="100" width="80" height="50" stroke="#00d4ff" fill="none" stroke-width="2"/>
-                        <text x="90" y="130" text-anchor="middle" fill="#fff">HPF</text>
-                        <line x1="130" y1="125" x2="170" y2="125" stroke="#fff" stroke-width="2"/>
-                        <rect x="170" y="100" width="80" height="50" stroke="#ff0055" fill="none" stroke-width="2"/>
-                        <text x="210" y="130" text-anchor="middle" fill="#fff">LPF</text>
-                        <line x1="250" y1="125" x2="300" y2="125" stroke="#fff" stroke-width="2"/>
-                        <path d="M 50 220 L 120 220 L 135 180 L 150 220 L 300 220" stroke="#fff" fill="none" opacity="0.6"/>`;
+                s += `<rect x="50" y="120" width="80" height="60" stroke="#00e5ff" fill="none" stroke-width="2"/>
+                      <text x="90" y="155" text-anchor="middle" fill="#fff">HPF</text>
+                      <line x1="130" y1="150" x2="170" y2="150" stroke="#fff"/>
+                      <rect x="170" y="120" width="80" height="60" stroke="#ff4081" fill="none" stroke-width="2"/>
+                      <text x="210" y="155" text-anchor="middle" fill="#fff">LPF</text>
+                      <line x1="250" y1="150" x2="350" y2="150" stroke="#fff" marker-end="url(#arrow)"/>`;
                 break;
             case 'bode_plot':
-                svg += `<line x1="40" y1="260" x2="360" y2="260" stroke="#fff"/>
-                        <line x1="40" y1="260" x2="40" y2="40" stroke="#fff"/>
-                        <path d="M 40 260 Q 180 260 200 100 Q 220 100 360 260" stroke="#fff" fill="none" stroke-width="3"/>
-                        <line x1="200" y1="260" x2="200" y2="100" stroke="#ff0055" stroke-dasharray="3"/>
-                        <text x="200" y="280" text-anchor="middle" fill="#fff">10.7 MHz</text>`;
+                s += `<path d="M 40 250 L 360 250" stroke="#888"/> <path d="M 40 250 L 40 50" stroke="#888"/>
+                      <path d="M 40 250 Q 180 250 200 80 Q 220 80 360 250" fill="none" stroke="#00e5ff" stroke-width="3"/>
+                      <line x1="200" y1="250" x2="200" y2="80" stroke="#ff4081" stroke-dasharray="4"/>
+                      <text x="200" y="270" text-anchor="middle" fill="#fff">10.7 MHz</text>`;
+                break;
+            case 'parasitic_viz':
+                s += `<rect x="100" y="140" width="100" height="20" class="component"/>
+                      <text x="150" y="130" text-anchor="middle" fill="#fff">R Ideal</text>
+                      <path d="M 220 140 Q 230 110 240 140 Q 250 170 260 140" fill="none" stroke="#ff4081" stroke-width="2"/>
+                      <text x="240" y="100" text-anchor="middle" fill="#ff4081" font-size="12">Inductancia parásita</text>`;
+                break;
+            case 'impedance_viz':
+                 s += `<rect x="50" y="100" width="60" height="100" fill="#333" stroke="#fff"/>
+                       <text x="80" y="150" text-anchor="middle" fill="#fff" font-size="12">Etapa 1</text>
+                       <line x1="110" y1="150" x2="290" y2="150" stroke="#00e5ff" stroke-width="4"/>
+                       <rect x="290" y="100" width="60" height="100" fill="#333" stroke="#fff"/>
+                       <text x="320" y="150" text-anchor="middle" fill="#fff" font-size="12">Etapa 2</text>
+                       <text x="200" y="130" text-anchor="middle" fill="#ff4081">Zout = Zin?</text>`;
                 break;
             case 'comparison_table':
-                 svg = `<foreignObject width="100%" height="100%">
-                        <div xmlns="http://www.w3.org/1999/xhtml" style="color:white; display:flex; justify-content:center; align-items:center; height:100%;">
-                            <table style="font-size:14px; width:90%;">
-                                <tr><th>Tipo</th><th>Costo</th><th>Selectividad</th></tr>
-                                <tr><td>RC</td><td>Bajo</td><td>Mala</td></tr>
-                                <tr><td>LC</td><td>Medio</td><td>Buena</td></tr>
-                                <tr><td>Cerámico</td><td>Bajo</td><td>Excelente</td></tr>
-                            </table>
-                        </div>
-                       </foreignObject>`;
+                s += `<foreignObject width="100%" height="100%"><div style="color:#fff; display:flex; justify-content:center; align-items:center; height:100%;">
+                      <table style="border:1px solid #555; width:90%; font-size:14px;">
+                        <tr><th>Tipo</th><th>Selectividad (Q)</th></tr>
+                        <tr><td>RC</td><td style="color:#ff4081">Baja (Ancho)</td></tr>
+                        <tr><td>LC</td><td style="color:#ffa500">Media</td></tr>
+                        <tr><td>Cerámico</td><td style="color:#00ff00">Alta (Estrecho)</td></tr>
+                      </table></div></foreignObject>`;
+                break;
+            case 'summary_check':
+                s += `<text x="50" y="50" fill="#fff" font-size="20">Checklist Final:</text>
+                      <text x="50" y="100" fill="#00e5ff" font-size="18">✔ Frecuencia ~10.7M</text>
+                      <text x="50" y="140" fill="#00e5ff" font-size="18">✔ Componentes E12</text>
+                      <text x="50" y="180" fill="#00e5ff" font-size="18">✔ Topología Pasa-Banda</text>
+                      <circle cx="300" cy="150" r="60" fill="none" stroke="#00ff00" stroke-width="5"/>
+                      <path d="M 270 150 L 290 170 L 330 120" fill="none" stroke="#00ff00" stroke-width="5"/>`;
                 break;
             default:
-                // Default generic visual for calculation steps
-                svg += `<rect x="50" y="50" width="300" height="200" rx="15" fill="#333" stroke="#555"/>
-                        <text x="200" y="150" text-anchor="middle" fill="#aaa" font-size="20">Procesando...</text>
-                        <circle cx="200" cy="150" r="50" fill="none" stroke="#00d4ff" stroke-width="2" stroke-dasharray="20">
-                             <animateTransform attributeName="transform" type="rotate" from="0 200 150" to="360 200 150" dur="2s" repeatCount="indefinite"/>
-                        </circle>`;
+                // Solo por si acaso, pero ya no debería salir
+                s += `<text x="200" y="150" text-anchor="middle" fill="red">Error visual</text>`;
         }
-        svg += `</svg>`;
-        return svg;
+        s += `</svg>`;
+        return s;
     }
 
     function initSlides() {
@@ -404,16 +356,8 @@
             const slideDiv = document.createElement('div');
             slideDiv.className = `slide ${index === 0 ? 'active' : ''}`;
             slideDiv.id = `slide-${index}`;
-            
             const visualContent = getSvgContent(data.type);
-
-            slideDiv.innerHTML = `
-                <h1>${data.title}</h1>
-                <div class="content">
-                    <div class="text-panel">${data.content}</div>
-                    <div class="visual-panel">${visualContent}</div>
-                </div>
-            `;
+            slideDiv.innerHTML = `<h1>${data.title}</h1><div class="content"><div class="text-panel">${data.content}</div><div class="visual-panel">${visualContent}</div></div>`;
             container.insertBefore(slideDiv, progressBar);
         });
     }
@@ -421,26 +365,12 @@
     function updateSlide() {
         document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
         document.getElementById(`slide-${currentSlide}`).classList.add('active');
-        
-        const percent = ((currentSlide + 1) / slidesData.length) * 100;
-        progressBar.style.width = `${percent}%`;
-        
+        progressBar.style.width = `${((currentSlide + 1) / slidesData.length) * 100}%`;
         slideNumberDisplay.innerText = `${currentSlide + 1} / ${slidesData.length}`;
     }
 
-    function nextSlide() {
-        if (currentSlide < slidesData.length - 1) {
-            currentSlide++;
-            updateSlide();
-        }
-    }
-
-    function prevSlide() {
-        if (currentSlide > 0) {
-            currentSlide--;
-            updateSlide();
-        }
-    }
+    function nextSlide() { if (currentSlide < slidesData.length - 1) { currentSlide++; updateSlide(); }}
+    function prevSlide() { if (currentSlide > 0) { currentSlide--; updateSlide(); }}
 
     document.addEventListener('keydown', (e) => {
         if (e.key === "ArrowRight" || e.key === " ") nextSlide();
@@ -449,8 +379,9 @@
 
     document.addEventListener('click', (e) => {
         if(e.target.tagName === 'BUTTON') return;
-        if (e.clientX > window.innerWidth * 0.7) nextSlide();
-        if (e.clientX < window.innerWidth * 0.3) prevSlide();
+        const w = window.innerWidth;
+        if (e.clientX > w * 0.6) nextSlide();
+        else if (e.clientX < w * 0.4) prevSlide();
     });
 
     initSlides();
