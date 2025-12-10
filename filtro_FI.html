@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diseño de Filtros RC para Frecuencia Intermedia FM</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --accent-color: #00d4ff;
+            --secondary-color: #ff0055;
+            --slide-bg: #252525;
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+        }
+
+        #presentation-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            width: 90%; /* Responsive width */
+            max-width: 1200px;
+            height: 90%; /* Responsive height */
+            background-color: var(--slide-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.5s ease-in-out;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        h1, h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+        }
+        
+        h2 { border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: row; /* Default layout: text left, visual right */
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+
+        .text-panel { flex: 1; font-size: 1.5rem; line-height: 1.6; }
+        .visual-panel { flex: 1; display: flex; justify-content: center; align-items: center; height: 100%; }
+        
+        /* Diagrams and SVGs */
+        svg { width: 100%; height: 100%; max-height: 400px; }
+        .circuit-line { stroke: var(--text-color); stroke-width: 3; fill: none; }
+        .component { fill: none; stroke: var(--accent-color); stroke-width: 3; }
+        .label { fill: var(--text-color); font-size: 14px; font-family: monospace; }
+        .anim-signal { stroke: var(--secondary-color); stroke-width: 4; stroke-dasharray: 10; animation: dash 1s linear infinite; opacity: 0.7; }
+
+        @keyframes dash { to { stroke-dashoffset: -20; } }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 1.2rem; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: center; }
+        th { background-color: #333; color: var(--accent-color); }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            color: #000;
+            font-weight: bold;
+        }
+        button:hover { background-color: #fff; }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background-color: var(--accent-color);
+            transition: width 0.3s;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #666;
+            font-size: 1.2rem;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .content { flex-direction: column; }
+            .text-panel { font-size: 1rem; }
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="presentation-container">
+    <div class="progress-bar" id="progress"></div>
+    <div class="slide-number" id="slide-number">1 / 20</div>
+    
+    <div class="controls">
+        <button onclick="prevSlide()">❮ Anterior</button>
+        <button onclick="nextSlide()">Siguiente ❯</button>
+    </div>
+</div>
+
+<script>
+    const slidesData = [
+        {
+            title: "Filtros RC para Frecuencia Intermedia (FM)",
+            content: "<ul><li>Objetivo: Aislar 10.7 MHz</li><li>Método: Cálculo de circuitos RC</li><li>Aplicación: Receptores de Radio FM</li></ul><p>Pulsa siguiente para comenzar.</p>",
+            type: "intro"
+        },
+        {
+            title: "¿Qué es la Frecuencia Intermedia (IF)?",
+            content: "En la radio superheterodina, la señal de RF se mezcla para bajar a una frecuencia fija estándar. En FM comercial, esta es <strong>10.7 MHz</strong>.",
+            type: "diagram_block"
+        },
+        {
+            title: "El Desafío del Filtrado",
+            content: "Necesitamos atenuar frecuencias bajas (audio/ruido) y muy altas (armónicos), dejando pasar solo los 10.7 MHz. <br><br><strong>Solución:</strong> Filtros Pasa-Banda (Combinación de Pasa-Bajos y Pasa-Altos).",
+            type: "spectrum"
+        },
+        {
+            title: "Concepto: Filtro RC Pasa-Bajos",
+            content: "Permite el paso de frecuencias inferiores a la de corte ($f_c$) y atenúa las superiores.<br><br><strong>Configuración:</strong> Resistencia en serie, Condensador a tierra.",
+            type: "circuit_lpf"
+        },
+        {
+            title: "Fórmula de Frecuencia de Corte",
+            content: "La piedra angular del diseño RC:<br><br>$$f_c = \\frac{1}{2\\pi R C}$$<br><br>Donde:<br>R = Resistencia (Ohms)<br>C = Capacitancia (Farads)",
+            type: "formula_viz"
+        },
+        {
+            title: "Objetivo: Pasa-Bajos a 10.7 MHz",
+            content: "Queremos que $f_c \\approx 10.7 \\text{ MHz}$.<br>Esto asegurará que el ruido de alta frecuencia sea atenuado, aunque un RC de primer orden tiene una pendiente suave (6dB/octava).",
+            type: "target_viz"
+        },
+        {
+            title: "Paso 1: Elegir un componente fijo",
+            content: "En RF (Radiofrecuencia), es común fijar la impedancia (R) o el capacitor (C) a valores comerciales.<br>Intentaremos fijar <strong>R = 150 Ω</strong> (Impedancia baja para minimizar ruido).",
+            type: "table_resistors"
+        },
+        {
+            title: "Paso 2: Despejar C",
+            content: "Reorganizamos la fórmula:<br>$$C = \\frac{1}{2\\pi R f_c}$$<br><br>Sustituimos:<br>$$C = \\frac{1}{2\\pi (150)(10.7 \\times 10^6)}$$",
+            type: "calc_step1"
+        },
+        {
+            title: "Cálculo Numérico (LPF)",
+            content: "Calculamos el denominador:<br>$2 \\times \\pi \\times 150 \\times 10.700.000 \\approx 10.084.512.437$<br><br>Inverso:<br>$C \\approx 99.16 \\times 10^{-12} \\text{ F}$",
+            type: "calc_result_1"
+        },
+        {
+            title: "Selección de Componente Comercial",
+            content: "El valor calculado es <strong>99.16 pF</strong>.<br><br>Valor comercial más cercano: <strong>100 pF</strong>.<br><br>Recalculando $f_c$ real: 10.61 MHz (Aceptable).",
+            type: "component_img"
+        },
+        {
+            title: "Concepto: Filtro RC Pasa-Altos",
+            content: "Bloquea DC y frecuencias bajas, deja pasar 10.7 MHz.<br><br><strong>Configuración:</strong> Condensador en serie, Resistencia a tierra.",
+            type: "circuit_hpf"
+        },
+        {
+            title: "Cálculo Pasa-Altos (HPF)",
+            content: "Usamos la misma frecuencia de corte objetivo: 10.7 MHz.<br>Para variar, fijaremos <strong>C = 47 pF</strong> (Valor estándar RF).",
+            type: "calc_step2"
+        },
+        {
+            title: "Despejando R",
+            content: "$$R = \\frac{1}{2\\pi C f_c}$$<br><br>$$R = \\frac{1}{2\\pi (47 \\times 10^{-12})(10.7 \\times 10^6)}$$",
+            type: "formula_r"
+        },
+        {
+            title: "Resultado Numérico (HPF)",
+            content: "$2 \\times \\pi \\times 47p \\times 10.7M \\approx 0.00316$<br><br>$R \\approx 316.4 \\Omega$.<br><br>Valor comercial cercano: <strong>330 Ω</strong>.",
+            type: "resistor_select"
+        },
+        {
+            title: "Estructura Pasa-Banda",
+            content: "Conectando el HPF y el LPF en cascada (con un buffer intermedio idealmente) creamos un filtro pasa-banda rudimentario centrado cerca de 10.7 MHz.",
+            type: "circuit_bandpass"
+        },
+        {
+            title: "Simulación: Diagrama de Bode",
+            content: "Vemos cómo la señal es máxima alrededor de 10.7 MHz y cae hacia los lados.<br>Nota: Un filtro RC simple tiene un factor Q bajo (es muy ancho).",
+            type: "bode_plot"
+        },
+        {
+            title: "Consideraciones de RF: Parásitos",
+            content: "A 10.7 MHz, las patas de los componentes tienen inductancia.<br>Un resistor no es solo resistencia, es también un pequeño inductor.",
+            type: "parasitic_viz"
+        },
+        {
+            title: "Impedancia de Entrada/Salida",
+            content: "Los filtros RC afectan la impedancia. <br>El filtro LPF de 150Ω presenta una carga diferente que el HPF de 330Ω. Esto es crucial para acoplar etapas de amplificación.",
+            type: "impedance_viz"
+        },
+        {
+            title: "Limitaciones y Realidad",
+            content: "Para radio FM de alta calidad, los filtros RC suelen ser insuficientes para la selectividad.<br>Se usan filtros <strong>Cerámicos</strong> o <strong>LC (Tanque)</strong>.",
+            type: "comparison_table"
+        },
+        {
+            title: "Resumen Final",
+            content: "<strong>Filtro LPF:</strong> R=150Ω, C=100pF<br><strong>Filtro HPF:</strong> C=47pF, R=330Ω<br><strong>Frecuencia:</strong> ~10.7 MHz<br><br>Base teórica para entender el filtrado RF.",
+            type: "summary_check"
+        }
+    ];
+
+    const container = document.getElementById('presentation-container');
+    const progressBar = document.getElementById('progress');
+    const slideNumberDisplay = document.getElementById('slide-number');
+    let currentSlide = 0;
+
+    // SVG Generators
+    function getSvgContent(type) {
+        const width = 400;
+        const height = 300;
+        let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+        
+        switch(type) {
+            case 'intro':
+                svg += `<circle cx="200" cy="150" r="40" fill="none" stroke="#00d4ff" stroke-width="4">
+                        <animate attributeName="r" from="40" to="100" dur="1.5s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" from="1" to="0" dur="1.5s" repeatCount="indefinite" />
+                        </circle>
+                        <text x="200" y="155" text-anchor="middle" fill="#fff" font-size="24">FM</text>`;
+                break;
+            case 'diagram_block':
+                svg += `<rect x="10" y="100" width="80" height="60" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                        <text x="50" y="135" text-anchor="middle" fill="#fff" font-size="12">Antena</text>
+                        <line x1="90" y1="130" x2="130" y2="130" stroke="#fff" stroke-width="2" marker-end="url(#arrow)"/>
+                        <rect x="130" y="100" width="80" height="60" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                        <text x="170" y="135" text-anchor="middle" fill="#fff" font-size="12">Mixer</text>
+                        <line x1="210" y1="130" x2="250" y2="130" stroke="#fff" stroke-width="2"/>
+                        <rect x="250" y="100" width="80" height="60" fill="none" stroke="#ff0055" stroke-width="3"/>
+                        <text x="290" y="135" text-anchor="middle" fill="#fff" font-size="12">IF Filter</text>
+                        <text x="290" y="180" text-anchor="middle" fill="#ff0055" font-size="14">10.7 MHz</text>`;
+                break;
+            case 'spectrum':
+                svg += `<line x1="20" y1="250" x2="380" y2="250" stroke="#fff" stroke-width="2"/>
+                        <line x1="20" y1="250" x2="20" y2="20" stroke="#fff" stroke-width="2"/>
+                        <path d="M 20 240 Q 100 240 180 240 L 190 50 L 210 50 L 220 240 Q 300 240 380 240" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                        <line x1="200" y1="250" x2="200" y2="50" stroke="#ff0055" stroke-dasharray="4"/>
+                        <text x="200" y="270" text-anchor="middle" fill="#fff" font-size="14">10.7 MHz</text>`;
+                break;
+            case 'circuit_lpf':
+                svg += `<line x1="50" y1="100" x2="150" y2="100" class="circuit-line"/> <polyline points="150,100 160,90 170,110 180,90 190,110 200,90 210,110 220,100" class="component"/> <text x="185" y="80" text-anchor="middle" class="label">R</text>
+                        <line x1="220" y1="100" x2="350" y2="100" class="circuit-line"/> <line x1="280" y1="100" x2="280" y2="150" class="circuit-line"/> <line x1="260" y1="150" x2="300" y2="150" class="component"/> <line x1="260" y1="160" x2="300" y2="160" class="component"/> <line x1="280" y1="160" x2="280" y2="200" class="circuit-line"/> <line x1="260" y1="200" x2="300" y2="200" class="circuit-line"/> <text x="310" y="155" class="label">C</text>
+                        <circle cx="50" cy="100" r="5" fill="#fff"/> <text x="40" y="90" class="label">In</text>
+                        <circle cx="350" cy="100" r="5" fill="#fff"/> <text x="360" y="90" class="label">Out</text>`;
+                break;
+            case 'circuit_hpf':
+                svg += `<line x1="50" y1="100" x2="150" y2="100" class="circuit-line"/>
+                        <line x1="150" y1="90" x2="150" y2="110" class="component"/> <line x1="160" y1="90" x2="160" y2="110" class="component"/> <text x="155" y="80" text-anchor="middle" class="label">C</text>
+                        <line x1="160" y1="100" x2="350" y2="100" class="circuit-line"/>
+                        <line x1="250" y1="100" x2="250" y2="130" class="circuit-line"/>
+                        <polyline points="250,130 240,140 260,150 240,160 260,170 240,180 260,190 250,200" class="component"/> <line x1="250" y1="200" x2="250" y2="220" class="circuit-line"/>
+                        <line x1="230" y1="220" x2="270" y2="220" class="circuit-line"/> <text x="270" y="170" class="label">R</text>`;
+                break;
+             case 'circuit_bandpass':
+                // Simplified Block Diagram
+                svg += `<rect x="50" y="100" width="80" height="50" stroke="#00d4ff" fill="none" stroke-width="2"/>
+                        <text x="90" y="130" text-anchor="middle" fill="#fff">HPF</text>
+                        <line x1="130" y1="125" x2="170" y2="125" stroke="#fff" stroke-width="2"/>
+                        <rect x="170" y="100" width="80" height="50" stroke="#ff0055" fill="none" stroke-width="2"/>
+                        <text x="210" y="130" text-anchor="middle" fill="#fff">LPF</text>
+                        <line x1="250" y1="125" x2="300" y2="125" stroke="#fff" stroke-width="2"/>
+                        
+                        <path d="M 50 220 L 100 220 L 120 180 L 140 220 L 300 220" stroke="#fff" fill="none" opacity="0.5"/>
+                        <text x="180" y="250" text-anchor="middle" fill="#aaa">Señal Filtrada</text>`;
+                break;
+            case 'bode_plot':
+                svg += `<line x1="40" y1="260" x2="360" y2="260" stroke="#fff"/>
+                        <line x1="40" y1="260" x2="40" y2="40" stroke="#fff"/>
+                        <path d="M 40 260 Q 150 260 200 100 L 360 100" stroke="#00d4ff" fill="none" stroke-width="2" stroke-dasharray="5"/>
+                        <path d="M 40 100 L 200 100 Q 250 100 360 260" stroke="#ff0055" fill="none" stroke-width="2" stroke-dasharray="5"/>
+                        <path d="M 40 260 Q 180 260 200 100 Q 220 100 360 260" stroke="#fff" fill="none" stroke-width="3"/>
+                        <text x="200" y="280" text-anchor="middle" fill="#fff">10.7 MHz</text>
+                        <text x="25" y="100" fill="#fff">-3dB</text>`;
+                break;
+             case 'table_resistors':
+                svg = `<foreignObject width="100%" height="100%">
+                        <div xmlns="http://www.w3.org/1999/xhtml" style="color:white; display:flex; justify-content:center; align-items:center; height:100%;">
+                            <table style="font-size:14px; width:80%;">
+                                <tr><th>Serie E12</th><th>Valores (Ohms)</th></tr>
+                                <tr><td>Baja</td><td>10, 100, <strong>150</strong>, 220</td></tr>
+                                <tr><td>Media</td><td>330, 470, 1k, 10k</td></tr>
+                                <tr><td>Alta</td><td>100k, 1M, 10M</td></tr>
+                            </table>
+                        </div>
+                       </foreignObject>`;
+                break;
+             case 'comparison_table':
+                 svg = `<foreignObject width="100%" height="100%">
+                        <div xmlns="http://www.w3.org/1999/xhtml" style="color:white; display:flex; justify-content:center; align-items:center; height:100%;">
+                            <table style="font-size:14px; width:90%;">
+                                <tr><th>Tipo</th><th>Costo</th><th>Selectividad</th></tr>
+                                <tr><td>RC</td><td>Bajo</td><td>Mala (Ancha)</td></tr>
+                                <tr><td>LC</td><td>Medio</td><td>Buena</td></tr>
+                                <tr><td>Cerámico</td><td>Bajo</td><td>Excelente (10.7)</td></tr>
+                            </table>
+                        </div>
+                       </foreignObject>`;
+                break;
+            default:
+                // Generic geometric abstract visual for math steps
+                svg += `<rect x="50" y="50" width="300" height="200" rx="15" fill="#333" stroke="#555"/>
+                        <circle cx="200" cy="150" r="50" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                        <line x1="200" y1="150" x2="235" y2="115" stroke="#ff0055" stroke-width="2">
+                            <animateTransform attributeName="transform" type="rotate" from="0 200 150" to="360 200 150" dur="4s" repeatCount="indefinite"/>
+                        </line>
+                        <text x="200" y="280" text-anchor="middle" fill="#aaa">Cálculo en proceso...</text>`;
+        }
+        svg += `</svg>`;
+        return svg;
+    }
+
+    function initSlides() {
+        slidesData.forEach((data, index) => {
+            const slideDiv = document.createElement('div');
+            slideDiv.className = `slide ${index === 0 ? 'active' : ''}`;
+            slideDiv.id = `slide-${index}`;
+            
+            const visualContent = getSvgContent(data.type);
+
+            slideDiv.innerHTML = `
+                <h1>${data.title}</h1>
+                <div class="content">
+                    <div class="text-panel">${data.content}</div>
+                    <div class="visual-panel">${visualContent}</div>
+                </div>
+            `;
+            container.insertBefore(slideDiv, progressBar);
+        });
+    }
+
+    function updateSlide() {
+        // Hide all
+        document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+        // Show current
+        document.getElementById(`slide-${currentSlide}`).classList.add('active');
+        
+        // Update progress
+        const percent = ((currentSlide + 1) / slidesData.length) * 100;
+        progressBar.style.width = `${percent}%`;
+        
+        // Update number
+        slideNumberDisplay.innerText = `${currentSlide + 1} / ${slidesData.length}`;
+    }
+
+    function nextSlide() {
+        if (currentSlide < slidesData.length - 1) {
+            currentSlide++;
+            updateSlide();
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            updateSlide();
+        }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === "ArrowRight" || e.key === " ") nextSlide();
+        if (e.key === "ArrowLeft") prevSlide();
+    });
+
+    // Tap zones for mobile
+    document.addEventListener('click', (e) => {
+        // Ignore if clicking buttons
+        if(e.target.tagName === 'BUTTON') return;
+        
+        const width = window.innerWidth;
+        if (e.clientX > width * 0.7) nextSlide();
+        if (e.clientX < width * 0.3) prevSlide();
+    });
+
+    // Init
+    initSlides();
+    updateSlide();
+
+</script>
+</body>
+</html>
