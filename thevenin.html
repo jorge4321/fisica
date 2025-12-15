@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo de Resistencia Thevenin</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #ecf0f1;
+            --text: #34495e;
+            --slide-bg: #ffffff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary);
+            color: var(--text);
+        }
+
+        /* Contenedor principal */
+        #presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Diapositivas */
+        .slide {
+            display: none;
+            width: 90vw;
+            height: 85vh;
+            background: var(--slide-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2rem;
+            box-sizing: border-box;
+            animation: fadeIn 0.5s ease;
+            position: absolute;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tipografía Responsive */
+        h1 { font-size: clamp(1.5rem, 4vw, 3rem); text-align: center; color: var(--primary); margin: 0; }
+        h2 { font-size: clamp(1.2rem, 3vw, 2.5rem); color: var(--accent); margin-bottom: 1rem; }
+        p, li { font-size: clamp(1rem, 2vw, 1.5rem); line-height: 1.6; max-width: 800px; text-align: center; }
+        ul { text-align: left; }
+
+        /* Gráficos y SVG */
+        .visual-container {
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 1rem;
+        }
+        
+        svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+
+        /* Estilos específicos de SVG */
+        .circuit-line { fill: none; stroke: #333; stroke-width: 3; stroke-linecap: round; }
+        .resistor { fill: none; stroke: #e67e22; stroke-width: 4; }
+        .source { fill: #fff; stroke: #2980b9; stroke-width: 3; }
+        .terminal { fill: #c0392b; }
+        .text-svg { font-family: monospace; font-size: 14px; fill: #333; }
+        .highlight { stroke: #e74c3c; stroke-width: 5; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { stroke-opacity: 1; }
+            50% { stroke-opacity: 0.3; }
+            100% { stroke-opacity: 1; }
+        }
+
+        /* Controles */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        button:hover { background: #c0392b; }
+        button:disabled { background: #95a5a6; cursor: not-allowed; }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 1.2rem;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        /* Tablas */
+        table { border-collapse: collapse; width: 80%; margin: auto; }
+        th, td { border: 2px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: var(--primary); color: white; }
+
+        /* Utilidades matemáticas */
+        .formula { font-family: 'Courier New', monospace; background: #f0f0f0; padding: 10px; border-radius: 5px; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+<div id="presentation">
+    
+    <div class="slide active">
+        <h1>Resistencia Equivalente de Thevenin</h1>
+        <h2>Guía paso a paso</h2>
+        <div class="visual-container">
+            <svg viewBox="0 0 200 200" width="300" height="300">
+                <rect x="50" y="50" width="100" height="100" fill="#ecf0f1" stroke="#2c3e50" stroke-width="4"/>
+                <text x="100" y="105" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">Rth</text>
+                <circle cx="150" cy="80" r="5" class="terminal"/>
+                <circle cx="150" cy="120" r="5" class="terminal"/>
+                <line x1="150" y1="80" x2="180" y2="80" stroke="#2c3e50" stroke-width="3"/>
+                <line x1="150" y1="120" x2="180" y2="120" stroke="#2c3e50" stroke-width="3"/>
+            </svg>
+        </div>
+        <p>Aprende a simplificar circuitos complejos en una sola resistencia.</p>
+    </div>
+
+    <div class="slide">
+        <h1>¿Qué es R<sub>th</sub>?</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 400 200">
+                <rect x="20" y="50" width="100" height="100" fill="#ddd" stroke="#333" stroke-dasharray="5,5"/>
+                <text x="70" y="105" text-anchor="middle" font-size="12">Circuito Complejo</text>
+                
+                <path d="M140 100 L200 100" stroke="#e74c3c" stroke-width="4" marker-end="url(#arrowhead)"/>
+                
+                <rect x="220" y="80" width="40" height="10" fill="#e67e22" stroke="none"/> <text x="240" y="70" text-anchor="middle" font-size="14" font-weight="bold">Rth</text>
+                <line x1="220" y1="85" x2="260" y2="85" class="resistor"/>
+            </svg>
+        </div>
+        <p>Es la resistencia que se "ve" desde dos terminales específicos cuando todas las fuentes independientes están apagadas.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Utilidad</h1>
+        <div class="visual-container">
+             <table style="font-size: clamp(0.8rem, 1.5vw, 1.2rem);">
+                <tr>
+                    <th>Análisis Completo</th>
+                    <th>Con Thevenin</th>
+                </tr>
+                <tr>
+                    <td>Recalcular todo el circuito si cambia la carga (R<sub>L</sub>).</td>
+                    <td>La red compleja se convierte en una constante.</td>
+                </tr>
+                <tr>
+                    <td>Muchas Ecuaciones.</td>
+                    <td>Cálculo simple (Ley de Ohm).</td>
+                </tr>
+            </table>
+        </div>
+        <p>Permite analizar qué pasa con una carga variable sin resolver todo el circuito cada vez.</p>
+    </div>
+
+    <div class="slide">
+        <h1>La "Caja Negra"</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 300 200">
+                <rect x="50" y="50" width="150" height="100" fill="#333"/>
+                <text x="125" y="105" text-anchor="middle" fill="white" font-size="18">???</text>
+                <line x1="200" y1="80" x2="250" y2="80" stroke="#333" stroke-width="4"/>
+                <line x1="200" y1="120" x2="250" y2="120" stroke="#333" stroke-width="4"/>
+                <circle cx="250" cy="80" r="6" fill="#c0392b"/>
+                <circle cx="250" cy="120" r="6" fill="#c0392b"/>
+                <text x="260" y="85" font-size="14">A</text>
+                <text x="260" y="125" font-size="14">B</text>
+            </svg>
+        </div>
+        <p>No nos importa qué hay dentro (mallas, nodos). Solo nos importa cómo se comporta la resistencia entre A y B.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Resumen del Proceso</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 400 150">
+                <g transform="translate(10, 50)">
+                    <circle cx="20" cy="20" r="15" fill="#2c3e50"/><text x="20" y="25" text-anchor="middle" fill="white">1</text>
+                    <text x="45" y="25" font-size="12">Identificar carga</text>
+                </g>
+                <g transform="translate(110, 50)">
+                    <circle cx="20" cy="20" r="15" fill="#2c3e50"/><text x="20" y="25" text-anchor="middle" fill="white">2</text>
+                    <text x="45" y="25" font-size="12">Quitar carga</text>
+                </g>
+                <g transform="translate(210, 50)">
+                    <circle cx="20" cy="20" r="15" fill="#2c3e50"/><text x="20" y="25" text-anchor="middle" fill="white">3</text>
+                    <text x="45" y="25" font-size="12">Apagar fuentes</text>
+                </g>
+                 <g transform="translate(310, 50)">
+                    <circle cx="20" cy="20" r="15" fill="#e74c3c"/><text x="20" y="25" text-anchor="middle" fill="white">4</text>
+                    <text x="45" y="25" font-size="12">Calcular Req</text>
+                </g>
+                <line x1="50" y1="70" x2="110" y2="70" stroke="#aaa" stroke-width="2"/>
+                <line x1="150" y1="70" x2="210" y2="70" stroke="#aaa" stroke-width="2"/>
+                <line x1="250" y1="70" x2="310" y2="70" stroke="#aaa" stroke-width="2"/>
+            </svg>
+        </div>
+        <p>Vamos a desglosar estos 4 pasos críticos.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Paso 1: Identificar la Carga (R<sub>L</sub>)</h1>
+        <div class="visual-container">
+             <svg viewBox="0 0 300 200">
+                <rect x="50" y="50" width="200" height="100" fill="none" stroke="#333" stroke-width="2"/>
+                <circle cx="50" cy="100" r="15" class="source"/> <path d="M130 50 l10 10 l10 -20 l10 20 l10 -20 l10 10" class="resistor" transform="translate(0,0)"/>
+                
+                <path d="M250 80 l0 10 l-10 10 l20 10 l-20 10 l10 10" class="resistor highlight"/>
+                <text x="265" y="105" font-size="16" fill="#e74c3c" font-weight="bold">RL</text>
+             </svg>
+        </div>
+        <p>Es el componente que queremos analizar o que puede cambiar. El resto es el circuito a simplificar.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Paso 2: Remover la Carga</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 300 200">
+                <rect x="50" y="50" width="200" height="100" fill="none" stroke="#333" stroke-width="2"/>
+                <circle cx="50" cy="100" r="15" class="source"/>
+                <path d="M130 50 l10 10 l10 -20 l10 20 l10 -20 l10 10" class="resistor"/>
+                
+                <circle cx="250" cy="65" r="4" class="terminal"/>
+                <text x="260" y="65" font-size="14">A</text>
+                <circle cx="250" cy="135" r="4" class="terminal"/>
+                <text x="260" y="135" font-size="14">B</text>
+                
+                <line x1="250" y1="65" x2="250" y2="135" stroke="#aaa" stroke-width="2" stroke-dasharray="5,5"/>
+                <text x="260" y="100" font-size="12" fill="#aaa">Circuito Abierto</text>
+             </svg>
+        </div>
+        <p>Quitamos R<sub>L</sub> dejando dos terminales abiertos: <strong>A</strong> y <strong>B</strong>.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Paso 3: Apagar Fuentes</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="50" fill="none" stroke="#e74c3c" stroke-width="5"/>
+                <line x1="100" y1="70" x2="100" y2="100" stroke="#e74c3c" stroke-width="5"/>
+                <text x="100" y="180" text-anchor="middle" font-weight="bold">OFF</text>
+            </svg>
+        </div>
+        <p>Debemos anular todas las fuentes <strong>independientes</strong> para dejar el circuito "muerto" y medir solo la resistencia.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Fuentes de Tensión</h1>
+        <h2>Se convierten en CORTO CIRCUITO</h2>
+        <div class="visual-container">
+            <svg viewBox="0 0 400 150">
+                <g transform="translate(50, 50)">
+                    <circle cx="25" cy="25" r="20" class="source"/>
+                    <text x="25" y="30" text-anchor="middle" font-size="20">+</text>
+                    <text x="25" y="80" text-anchor="middle">V = 0</text>
+                </g>
+                
+                <path d="M120 75 L180 75" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+                
+                <g transform="translate(250, 50)">
+                    <line x1="25" y1="0" x2="25" y2="50" stroke="#e74c3c" stroke-width="4"/>
+                    <text x="25" y="80" text-anchor="middle">Cable (Corto)</text>
+                </g>
+            </svg>
+        </div>
+        <p>Si el voltaje es 0, no hay diferencia de potencial, es como un cable ideal.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Fuentes de Corriente</h1>
+        <h2>Se convierten en CIRCUITO ABIERTO</h2>
+        <div class="visual-container">
+             <svg viewBox="0 0 400 150">
+                <g transform="translate(50, 50)">
+                    <circle cx="25" cy="25" r="20" class="source"/>
+                    <line x1="25" y1="15" x2="25" y2="35" stroke="#2980b9" stroke-width="2"/>
+                    <path d="M20 20 L25 15 L30 20" stroke="#2980b9" fill="none" stroke-width="2"/>
+                    <text x="25" y="80" text-anchor="middle">I = 0</text>
+                </g>
+                
+                <path d="M120 75 L180 75" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+                
+                <g transform="translate(250, 50)">
+                    <line x1="25" y1="0" x2="25" y2="15" stroke="#333" stroke-width="3"/>
+                    <line x1="25" y1="35" x2="25" y2="50" stroke="#333" stroke-width="3"/>
+                    <circle cx="25" cy="15" r="3" fill="#333"/>
+                    <circle cx="25" cy="35" r="3" fill="#333"/>
+                    <text x="25" y="80" text-anchor="middle">Abierto (Corte)</text>
+                </g>
+            </svg>
+        </div>
+        <p>Si la corriente es 0, no pasan electrones, es como si el cable estuviera roto.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Ejemplo Práctico</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 300 200">
+                <circle cx="50" cy="100" r="15" class="source"/>
+                <text x="30" y="100" font-size="12">10V</text>
+                
+                <path d="M50 50 L100 50 l5 5 l10 -10 l10 10 l10 -10 l5 5 L180 50" class="circuit-line"/>
+                <text x="110" y="40" font-size="12">R1=10&Omega;</text>
+                
+                <path d="M180 50 L180 80 l-5 5 l10 10 l-10 10 l10 10 l-5 5 L180 150" class="circuit-line"/>
+                <text x="190" y="110" font-size="12">R2=40&Omega;</text>
+                
+                <path d="M180 150 L50 150 L50 115" class="circuit-line"/>
+                
+                <line x1="180" y1="50" x2="250" y2="50" class="circuit-line"/>
+                <circle cx="250" cy="50" r="4" class="terminal"/>
+                <text x="260" y="55" font-size="12">A</text>
+                
+                <line x1="180" y1="150" x2="250" y2="150" class="circuit-line"/>
+                <circle cx="250" cy="150" r="4" class="terminal"/>
+                <text x="260" y="155" font-size="12">B</text>
+            </svg>
+        </div>
+        <p>Calcularemos R<sub>th</sub> visto desde A y B.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Apagando la Fuente</h1>
+        <div class="visual-container">
+             <svg viewBox="0 0 300 200">
+                <line x1="50" y1="50" x2="50" y2="150" stroke="#e74c3c" stroke-width="4"/>
+                <text x="10" y="100" font-size="12" fill="#e74c3c">Corto</text>
+                
+                <path d="M50 50 L100 50 l5 5 l10 -10 l10 20 l10 -20 l5 5 L180 50" class="circuit-line"/>
+                <text x="110" y="40" font-size="12">R1</text>
+                
+                <path d="M180 50 L180 80 l-5 5 l10 10 l-10 10 l10 10 l-5 5 L180 150" class="circuit-line"/>
+                <text x="190" y="110" font-size="12">R2</text>
+                
+                <path d="M180 150 L50 150" class="circuit-line"/>
+                
+                 <line x1="180" y1="50" x2="250" y2="50" class="circuit-line"/>
+                <circle cx="250" cy="50" r="4" class="terminal"/>
+                <line x1="180" y1="150" x2="250" y2="150" class="circuit-line"/>
+                <circle cx="250" cy="150" r="4" class="terminal"/>
+            </svg>
+        </div>
+        <p>La fuente de 10V se ha convertido en un simple cable.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Perspectiva</h1>
+        <div class="visual-container">
+             <svg viewBox="0 0 300 200">
+                <path d="M260 100 Q280 80 300 100 Q280 120 260 100" fill="none" stroke="#333" stroke-width="2"/>
+                <circle cx="280" cy="100" r="5" fill="#333"/>
+                <path d="M270 100 L250 80" stroke="#333" stroke-width="1"/>
+                <path d="M270 100 L250 120" stroke="#333" stroke-width="1"/>
+                
+                <path d="M240 60 L190 60" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="200" y="45" font-size="10" fill="#e74c3c">Imagina corriente entrando</text>
+
+                <rect x="50" y="50" width="130" height="100" fill="none" stroke="#ccc"/>
+                 <text x="80" y="100" font-size="12" fill="#aaa">Red Pasiva</text>
+            </svg>
+        </div>
+        <p>Mira desde los terminales A y B hacia adentro. Imagina que inyectas una corriente: ¿por dónde pasa?</p>
+    </div>
+
+    <div class="slide">
+        <h1>Análisis</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 300 200">
+                 <circle cx="180" cy="50" r="6" fill="#2980b9"/>
+                 <text x="185" y="40" font-size="12" fill="#2980b9">Nodo</text>
+
+                 <path d="M240 50 L180 50" stroke="#333" stroke-width="2" stroke-dasharray="5,5"/>
+                 
+                 <path d="M180 50 L50 50 L50 150 L180 150" stroke="#e67e22" stroke-width="3" fill="none"/>
+                 <text x="80" y="140" font-size="12" fill="#e67e22">Camino por R1</text>
+
+                 <path d="M180 50 L180 150" stroke="#27ae60" stroke-width="3" fill="none"/>
+                 <text x="190" y="100" font-size="12" fill="#27ae60">Camino por R2</text>
+            </svg>
+        </div>
+        <p>Al entrar por A, la corriente llega al nodo y se divide: una parte va por R2 y otra por R1. ¡Están en paralelo!</p>
+    </div>
+
+    <div class="slide">
+        <h1>Cálculo Paralelo</h1>
+        <div class="formula">
+            R<sub>th</sub> = (R1 × R2) / (R1 + R2)
+        </div>
+        <div class="visual-container">
+             <svg viewBox="0 0 300 150">
+                 <text x="150" y="50" text-anchor="middle" font-size="18">R1 = 10&Omega;, R2 = 40&Omega;</text>
+                 <text x="150" y="100" text-anchor="middle" font-size="20" fill="#e74c3c">
+                     Req = (10 × 40) / (10 + 40)
+                 </text>
+             </svg>
+        </div>
+        <p>Cuando dos resistencias comparten los mismos dos nodos (debido al corto circuito de la fuente), están en paralelo.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Resultado</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 300 200">
+                <text x="150" y="60" text-anchor="middle" font-size="24">400 / 50 = 8&Omega;</text>
+                <rect x="100" y="90" width="100" height="50" rx="10" fill="#2c3e50"/>
+                <text x="150" y="125" text-anchor="middle" fill="white" font-size="20">Rth = 8&Omega;</text>
+            </svg>
+        </div>
+        <p>La resistencia equivalente de todo ese circuito es de solo 8 Ohmios.</p>
+    </div>
+
+    <div class="slide">
+        <h1>¡Cuidado!</h1>
+        <h2>Fuentes Dependientes</h2>
+        <div class="visual-container">
+            <svg viewBox="0 0 200 200">
+                <polygon points="100,50 150,100 100,150 50,100" fill="none" stroke="#e74c3c" stroke-width="5"/>
+                <text x="100" y="110" text-anchor="middle" font-size="40" font-weight="bold" fill="#e74c3c">!</text>
+            </svg>
+        </div>
+        <p>Si hay fuentes dependientes (rombos), <strong>NO</strong> se pueden apagar. Se debe usar el método de "Fuente de Prueba" (V/I).</p>
+    </div>
+
+    <div class="slide">
+        <h1>El Circuito Equivalente</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 300 200">
+                <rect x="40" y="40" width="220" height="120" fill="none" stroke="#ddd" stroke-dasharray="5,5"/>
+                
+                <circle cx="80" cy="100" r="20" class="source"/>
+                <text x="80" y="105" text-anchor="middle" font-size="10">Vth</text>
+                
+                <path d="M80 80 L80 60 L110 60 l5 5 l10 -10 l10 10 l10 -10 l5 5 L180 60" class="circuit-line"/>
+                <text x="135" y="45" font-size="14" fill="#e67e22">Rth (8&Omega;)</text>
+                
+                <circle cx="220" cy="60" r="5" class="terminal"/>
+                <circle cx="220" cy="140" r="5" class="terminal"/>
+                
+                <path d="M80 120 L80 140 L220 140" class="circuit-line"/>
+            </svg>
+        </div>
+        <p>Ahora tenemos una sola fuente de voltaje (Vth) en serie con nuestra Rth calculada.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Reconectando la Carga</h1>
+        <div class="visual-container">
+            <svg viewBox="0 0 300 200">
+                 <circle cx="80" cy="100" r="20" class="source"/>
+                 <path d="M80 80 L80 60 L140 60" class="circuit-line"/>
+                 <rect x="140" y="55" width="40" height="10" fill="#e67e22"/>
+                 
+                 <path d="M180 60 L240 60 L240 80" class="circuit-line"/>
+                 
+                 <path d="M240 80 l-5 5 l10 10 l-10 10 l10 10 l-5 5" class="resistor" stroke="#27ae60"/>
+                 <text x="260" y="105" font-size="14" fill="#27ae60">RL</text>
+                 
+                 <path d="M240 120 L240 140 L80 140 L80 120" class="circuit-line"/>
+            </svg>
+        </div>
+        <p>Volvemos a poner R<sub>L</sub>. Ahora el cálculo de corriente o voltaje en la carga es un simple divisor de tensión.</p>
+    </div>
+
+    <div class="slide">
+        <h1>Resumen</h1>
+        <ul>
+            <li>Identificar y quitar la carga.</li>
+            <li>Apagar fuentes independientes (V=Corto, I=Abierto).</li>
+            <li>Calcular resistencia equivalente desde los terminales abiertos.</li>
+            <li>Recuerda: Serie suma, Paralelo inverso de la suma de inversos.</li>
+        </ul>
+        <div class="visual-container">
+            <svg viewBox="0 0 100 100" width="100" height="100">
+                <circle cx="50" cy="50" r="40" fill="#27ae60"/>
+                <path d="M30 50 L45 65 L70 35" stroke="white" stroke-width="8" fill="none" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <p>¡Listo! Has simplificado el circuito.</p>
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn" onclick="changeSlide(-1)" disabled>Anterior</button>
+        <button id="nextBtn" onclick="changeSlide(1)">Siguiente</button>
+    </div>
+    
+    <div class="slide-number" id="slideNum">1 / 20</div>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <svg style="display: none;">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+            </marker>
+        </defs>
+    </svg>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const slideNumDisplay = document.getElementById('slideNum');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const totalSlides = slides.length;
+
+    function updateUI() {
+        // Update slides visibility
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active');
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            }
+        });
+
+        // Update Progress Bar
+        const progress = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${progress}%`;
+
+        // Update Number
+        slideNumDisplay.textContent = `${currentSlide + 1} / ${totalSlides}`;
+
+        // Update Buttons
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === totalSlides - 1;
+        if (currentSlide === totalSlides - 1) {
+            nextBtn.textContent = "Fin";
+        } else {
+            nextBtn.textContent = "Siguiente";
+        }
+    }
+
+    function changeSlide(direction) {
+        if (direction === 1 && currentSlide < totalSlides - 1) {
+            currentSlide++;
+        } else if (direction === -1 && currentSlide > 0) {
+            currentSlide--;
+        }
+        updateUI();
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+            changeSlide(1);
+        } else if (e.key === 'ArrowLeft') {
+            changeSlide(-1);
+        }
+    });
+
+    // Initialize
+    updateUI();
+</script>
+
+</body>
+</html>
